@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: 'Macondo', sans-serif; 
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-touch-callout: none !important;
+  /* background-color: #BEE3DB; */
+  /* background-color: rgb(191 219 254); */
+  background-color: rgb(55 65 81);
+  /* background-image: url('../public/images/carbon_fibre.webp');
+  background-repeat: repeat; */
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+a { -webkit-user-select: none !important; }

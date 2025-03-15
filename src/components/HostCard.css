@@ -1,0 +1,13 @@
+.card {
+    background-color: white;
+    background-size: 102% auto;
+    background-repeat: no-repeat;
+    background-position: top;
+    will-change: transform;
+    border-radius: 4px;
+    justify-content: center;
+}
+
+/* .highlight { 
+  box-shadow: 0 0 20px 7px gold;
+} */

@@ -1,0 +1,23 @@
+.guess {
+  font-size: 30px;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 10px;
+}
+
+@keyframes cursor-blink {
+  0% {
+    opacity: 0;
+  }
+}
+
+.guess::after {
+  content: "";
+  position: relative;
+  top: 6px;
+  width: 3px;
+  height: 35px;
+  background: #f6e05e;
+  display: inline-block;
+  animation: cursor-blink 1s steps(2) infinite;
+}
