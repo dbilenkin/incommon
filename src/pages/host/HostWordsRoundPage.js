@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useSpring, animated } from '@react-spring/web';
 import { doc, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
 import Nav from '../../components/Nav';
 import WordAndScore from '../../components/WordAndScore';
@@ -10,11 +9,7 @@ const HostWordsRoundPage = ({ gameData, gameRef, players }) => {
   const chooserName = players[currentPlayerIndex].name;
 
   const [roundData, setRoundData] = useState(null);
-  const [currentWord, setCurrentWord] = useState('');
-  const [wordScores, setWordScores] = useState({});
-  const [playerIndex, setPlayerIndex] = useState(0);
-  const [wordIndex, setWordIndex] = useState(0);
-  const [revealWords, setRevealWords] = useState(false);
+  const [playerOrder, setPlayerOrder] = useState([]);
 
   useEffect(() => {
     const roundsRef = collection(gameRef, "rounds");
@@ -33,46 +28,15 @@ const HostWordsRoundPage = ({ gameData, gameRef, players }) => {
     });
   }, [currentRound, gameRef]);
 
+  // When wordsRevealed becomes true, set player order for display
   useEffect(() => {
-    if (roundData && roundData.wordsRevealed) {
-      setRevealWords(true);
+    if (roundData?.wordsRevealed && playerOrder.length === 0) {
+      const sortedPlayers = [...players].sort(
+        (a, b) => (b.foundWords?.length || 0) - (a.foundWords?.length || 0)
+      );
+      setPlayerOrder(sortedPlayers);
     }
-  }, [roundData]);
-
-  useEffect(() => {
-    if (!revealWords) return;
-    const player = players[playerIndex];
-    if (player && player.foundWords && wordIndex < player.foundWords.length) {
-      const word = player.foundWords[wordIndex];
-
-      let animationTime = 0;
-
-      if (wordScores[word] === undefined) {
-        animationTime = 2000;
-        setCurrentWord(word);
-
-        const playersWithWord = players.filter(p => p.foundWords.includes(word));
-        const playersWithoutWordCount = players.length - playersWithWord.length;
-        const points = word.length * playersWithoutWordCount;
-
-        playersWithWord.forEach(p => {
-          p.score = (p.score || 0) + points;
-          const foundWord = p.foundWords.find(fw => fw === word);
-          setWordScores({ ...wordScores, [foundWord]: points });
-        });
-      }
-
-      setTimeout(() => setWordIndex(wordIndex + 1), animationTime);
-      
-    } else {
-      setTimeout(() => {
-        setCurrentWord('');
-        setWordIndex(0);
-        setPlayerIndex(playerIndex + 1);        
-      }, 2000);
-    }
-  }, [revealWords, playerIndex, wordIndex]);
-
+  }, [roundData?.wordsRevealed, players]);
 
   if (!roundData) {
     return (
@@ -96,46 +60,73 @@ const HostWordsRoundPage = ({ gameData, gameRef, players }) => {
     )
   }
 
+  // Get reveal state from Firebase
+  const globallyRevealedWords = roundData.globallyRevealedWords || {};
+  const playerScores = roundData.playerScores || {};
+  const revealState = roundData.revealState || {};
+  const currentRevealPlayerIndex = revealState.currentPlayerIndex || 0;
+  const currentWord = revealState.currentWord || '';
+
+  // Get display list - use playerOrder during reveal, otherwise sort players
+  const displayPlayers = playerOrder.length > 0
+    ? playerOrder
+    : [...players].sort((a, b) => (b.foundWords?.length || 0) - (a.foundWords?.length || 0));
+
+  const getWordDisplayInfo = (word, playerName) => {
+    const scoreInfo = globallyRevealedWords[word];
+    if (!scoreInfo) {
+      return { isRevealed: false, isCrossedOut: false, points: 0 };
+    }
+    // Cross out if: someone else revealed it, OR it's worth 0 points (everyone had it)
+    const isCrossedOut = scoreInfo.revealedBy !== playerName || scoreInfo.points === 0;
+    return {
+      isRevealed: true,
+      isCrossedOut,
+      points: scoreInfo.points
+    };
+  };
+
   return (
     <div>
       <Nav className={`${players.length <= 4 ? 'max-w-screen-lg' : 'max-w-screen-xl'}`}
         gameCode={getGameCode()}
         round={currentRound}
         word={getWord()} />
+
       <div className="grid grid-cols-4 gap-2 justify-stretch mt-2 mx-auto max-w-screen-xl">
-        {players
-          .sort((a, b) => (b.foundWords?.length || 0) - (a.foundWords?.length || 0))
-          .map((player, pIndex) => (
-            <div key={pIndex} 
-              className={`flex flex-col bg-gray-800 text-gray-200 rounded-lg p-4 m-2 
-                ${pIndex === playerIndex ? 'border-2 border-yellow-600' : ''}`}>
+        {displayPlayers.map((player, pIndex) => {
+          const isCurrentPlayer = playerOrder.length > 0 && playerOrder[currentRevealPlayerIndex]?.id === player.id;
+
+          return (
+            <div key={player.id || pIndex}
+              className={`flex flex-col bg-gray-800 text-gray-200 rounded-lg p-4 m-2
+                ${isCurrentPlayer ? 'border-2 border-yellow-500' : ''}`}>
               <div className="flex justify-between items-center border-b border-gray-700 pb-2 mb-2">
-                <div className={`text-left font-semibold`}>
+                <div className={`text-left font-semibold ${isCurrentPlayer ? 'text-yellow-400' : ''}`}>
                   {player.name}
                 </div>
                 <div className="text-lg">
-                  {player.foundWords?.length || 0} words | {player.score || 0} points
+                  {player.foundWords?.length || 0} words | {playerScores[player.id] || 0} pts
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {player.foundWords?.map((foundWord, index) => {
-                  const points = wordScores[foundWord];
+                  const { isRevealed, isCrossedOut, points } = getWordDisplayInfo(foundWord, player.name);
                   const isCurrentWord = currentWord === foundWord;
-                  const isRevealed = wordScores[foundWord] !== undefined;
-                  const allPlayersHaveWord = players.every(p => p.foundWords.some(fw => fw === foundWord));
 
                   return (
                     <WordAndScore key={index}
                       word={foundWord}
                       points={points}
                       highlight={isCurrentWord}
-                      allPlayersHaveWord={allPlayersHaveWord}
-                      isRevealed={isRevealed} />
+                      isRevealed={isRevealed}
+                      isCrossedOut={isCrossedOut} />
                   );
                 })}
               </div>
             </div>
-          ))}
+          );
+        })}
       </div>
     </div>
   );

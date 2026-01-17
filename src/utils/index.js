@@ -173,12 +173,13 @@ export function getRandomWords(deckType) {
 
 export function getWordsOutOfWordsWords() {
   const randomWords = [];
-  const allWords = words['life'];
-  for (let i = 0; i < numWords; i++) {
+  const allWords = words['outofwords'];
+  const numWordsToShow = 5;
+  for (let i = 0; i < numWordsToShow; i++) {
     let randomIndexFound = false;
     while (!randomIndexFound) {
       const randomTry = Math.floor(Math.random() * allWords.length)
-      const randomWord = allWords[randomTry]
+      const randomWord = allWords[randomTry].toUpperCase();
       if (!allChosenWords.includes(randomWord)) {
         randomWords.push(randomWord);
         allChosenWords.push(randomWord);

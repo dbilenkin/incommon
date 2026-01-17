@@ -15,8 +15,16 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
   const [selectedWordSelection, setSelectedWordSelection] = useState(gameData.wordSelection || 'wordList');
   const [minWordLength, setMinWordLength] = useState(gameData.minWordLength || 4);
   const [gameTime, setGameTime] = useState(gameData.gameTime || 2);
+  const [numRounds, setNumRounds] = useState(gameData.numRounds || players.length);
   const [showRemovePlayerModal, setShowRemovePlayerModal] = useState(false);
   const [removePlayerName, setRemovePlayerName] = useState('');
+
+  // Auto-update numRounds as players join, unless user set it higher
+  useEffect(() => {
+    if (numRounds < players.length) {
+      setNumRounds(players.length);
+    }
+  }, [players.length]);
 
   useEffect(() => {
     const updateGame = async () => {
@@ -29,13 +37,14 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
       } else if (gameData.gameType === 'Out of Words, Words') {
         await updateDoc(gameRef, {
           minWordLength: parseInt(minWordLength),
-          gameTime: parseInt(gameTime)
+          gameTime: parseInt(gameTime),
+          numRounds: parseInt(numRounds)
         });
       }
     }
 
     updateGame();
-  }, [selectedGameLength, selectedDeck, selectedWordSelection, minWordLength, gameTime]);
+  }, [selectedGameLength, selectedDeck, selectedWordSelection, minWordLength, gameTime, numRounds]);
 
   const handleWordSelectionChange = (event) => {
     setSelectedWordSelection(event.target.value);
@@ -55,6 +64,10 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
 
   const handleGameTimeChange = (event) => {
     setGameTime(event.target.value);
+  }
+
+  const handleNumRoundsChange = (event) => {
+    setNumRounds(event.target.value);
   }
 
   if (!players.length) {
@@ -238,6 +251,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
                 onChange={handleGameTimeChange}
                 className="block appearance-none w-7/12 bg-gray-700 border border-gray-500 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-gray-600 focus:border-gray-500"
               >
+                <option key="1" value="1">1</option>
                 <option key="2" value="2">2</option>
                 <option key="3" value="3">3</option>
                 <option key="5" value="5">5</option>
@@ -270,6 +284,29 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
             <div className=''>
               <label htmlFor="minWordLength" className="block py-2 font-normal border-b-2 border-gray-700">
                 Minimum Word Length: <span className='font-bold'>{gameData.minWordLength}</span>
+              </label>
+            </div>
+          )}
+          {firstPlayer ? (
+            <div className="flex items-center pt-4">
+              <label htmlFor="numRounds" className="block font-bold w-5/12">
+                Number of Rounds
+              </label>
+              <select
+                id="numRounds"
+                value={numRounds}
+                onChange={handleNumRoundsChange}
+                className="block appearance-none w-7/12 bg-gray-700 border border-gray-500 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-gray-600 focus:border-gray-500"
+              >
+                {[...Array(10)].map((_, i) => (
+                  <option key={i + 1} value={i + 1}>{i + 1}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className=''>
+              <label htmlFor="numRounds" className="block pt-2 font-normal">
+                Number of Rounds: <span className='font-bold'>{gameData.numRounds || players.length}</span>
               </label>
             </div>
           )}

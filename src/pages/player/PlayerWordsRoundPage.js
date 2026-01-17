@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { doc, onSnapshot, updateDoc, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { CurrentGameContext } from '../../contexts/CurrentGameContext';
-import Deck from '../../components/Deck';
 import Button from '../../components/Button';
-import { getOrdinal, getWordsOutOfWordsWords } from '../../utils';
+import { getWordsOutOfWordsWords } from '../../utils';
 import OutOfWordsWords from '../../components/OutOfWordsWords';
+import WordAndScore from '../../components/WordAndScore';
 
 const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
-  const { currentRound, minWordLength, gameTime } = gameData;
+  const { currentRound, minWordLength, gameTime, numRounds } = gameData;
   const currentPlayerIndex = currentRound % players.length;
 
   const { currentPlayerName, currentPlayerId } = useContext(CurrentGameContext);
@@ -20,6 +20,15 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
   const [timesUp, setTimesUp] = useState(false);
   const [foundWords, setFoundWords] = useState([]);
   const [wordsRevealed, setWordsRevealed] = useState(false);
+  const [customWord, setCustomWord] = useState('');
+
+  // Reveal state (for first player only)
+  const [playerOrder, setPlayerOrder] = useState([]);
+  const [revealPlayerIndex, setRevealPlayerIndex] = useState(0);
+  const [revealWordIndex, setRevealWordIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [globallyRevealedWords, setGloballyRevealedWords] = useState({});
+  const [playerScores, setPlayerScores] = useState({});
 
   const duration = gameTime * 60;
 
@@ -51,6 +60,12 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     setTimesUp(false);
     setFoundWords([]);
     setWordsRevealed(false);
+    setRoundData(null);  // Clear old round data to prevent flash
+    setPlayerOrder([]);
+    setRevealPlayerIndex(0);
+    setRevealWordIndex(0);
+    setGloballyRevealedWords({});
+    setPlayerScores({});
 
     const roundsRef = collection(gameRef, "rounds");
     const q = query(roundsRef, where('roundNumber', '==', currentRound));
@@ -85,9 +100,143 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
 
   const handleRevealWords = async () => {
     setWordsRevealed(true);
+
+    // Sort players by word count (most first) and fix this order
+    const sortedPlayers = [...players].sort(
+      (a, b) => (b.foundWords?.length || 0) - (a.foundWords?.length || 0)
+    );
+    setPlayerOrder(sortedPlayers);
+
+    // Initialize player scores
+    const initialScores = {};
+    sortedPlayers.forEach(p => { initialScores[p.id] = 0; });
+    setPlayerScores(initialScores);
+
     await updateDoc(roundRef, {
-      wordsRevealed: true
+      wordsRevealed: true,
+      revealState: {
+        currentPlayerIndex: 0,
+        currentWordIndex: 0,
+        currentWord: ''
+      }
     });
+  }
+
+  // Helper to find next unrevealed word for a player
+  const findNextUnrevealedWord = (player, startIndex, revealedWords) => {
+    if (!player?.foundWords) return { word: null, index: -1 };
+    for (let i = startIndex; i < player.foundWords.length; i++) {
+      if (revealedWords[player.foundWords[i]] === undefined) {
+        return { word: player.foundWords[i], index: i };
+      }
+    }
+    return { word: null, index: -1 };
+  };
+
+  // Helper to find next player with unrevealed words
+  const findNextPlayerWithUnrevealedWords = (startPlayerIndex, revealedWords) => {
+    for (let i = startPlayerIndex; i < playerOrder.length; i++) {
+      const { word } = findNextUnrevealedWord(playerOrder[i], 0, revealedWords);
+      if (word !== null) {
+        return i;
+      }
+    }
+    return -1; // No more players with unrevealed words
+  };
+
+  const handleNextReveal = async () => {
+    if (isAnimating) return;
+
+    // Find the next unrevealed word starting from current position
+    let searchPlayerIndex = revealPlayerIndex;
+    let searchWordIndex = revealWordIndex;
+    let nextWord = null;
+    let foundPlayerIndex = -1;
+    let foundWordIndex = -1;
+
+    // Search for next unrevealed word
+    while (searchPlayerIndex < playerOrder.length) {
+      const player = playerOrder[searchPlayerIndex];
+      const { word, index } = findNextUnrevealedWord(player, searchWordIndex, globallyRevealedWords);
+
+      if (word !== null) {
+        nextWord = word;
+        foundPlayerIndex = searchPlayerIndex;
+        foundWordIndex = index;
+        break;
+      }
+
+      // Move to next player
+      searchPlayerIndex++;
+      searchWordIndex = 0;
+    }
+
+    // No more unrevealed words - we're done
+    if (nextWord === null) {
+      const updatedPlayers = playerOrder.map(p => ({
+        ...p,
+        score: playerScores[p.id] || 0,
+        gameScore: (p.gameScore || 0) + (playerScores[p.id] || 0)
+      }));
+
+      await updateDoc(roundRef, {
+        players: updatedPlayers,
+        globallyRevealedWords: globallyRevealedWords,
+        playerScores: playerScores,
+        revealComplete: true,
+        revealState: {
+          currentPlayerIndex: revealPlayerIndex,
+          currentWordIndex: revealWordIndex,
+          currentWord: ''
+        }
+      });
+      return;
+    }
+
+    // Update indices if we moved to a different position
+    if (foundPlayerIndex !== revealPlayerIndex) {
+      setRevealPlayerIndex(foundPlayerIndex);
+    }
+    setRevealWordIndex(foundWordIndex);
+
+    // Start animating
+    setIsAnimating(true);
+
+    // Calculate points: wordLength * playersWithoutWord
+    const playersWithWord = playerOrder.filter(p => p.foundWords?.includes(nextWord));
+    const playersWithoutWordCount = playerOrder.length - playersWithWord.length;
+    const points = nextWord.length * playersWithoutWordCount;
+
+    // Update local state
+    const newGloballyRevealedWords = {
+      ...globallyRevealedWords,
+      [nextWord]: { points, revealedBy: playerOrder[foundPlayerIndex].name }
+    };
+    setGloballyRevealedWords(newGloballyRevealedWords);
+
+    // Award points to all players who have this word
+    const newPlayerScores = { ...playerScores };
+    playersWithWord.forEach(p => {
+      newPlayerScores[p.id] = (newPlayerScores[p.id] || 0) + points;
+    });
+    setPlayerScores(newPlayerScores);
+
+    // Update Firebase with current word being revealed
+    await updateDoc(roundRef, {
+      globallyRevealedWords: newGloballyRevealedWords,
+      playerScores: newPlayerScores,
+      revealState: {
+        currentPlayerIndex: foundPlayerIndex,
+        currentWordIndex: foundWordIndex,
+        currentWord: nextWord
+      }
+    });
+
+    // Animation delay, then allow next click (but keep word visible)
+    setTimeout(() => {
+      setRevealWordIndex(foundWordIndex + 1);
+      setIsAnimating(false);
+    }, 2000);
   }
 
   const startNextRound = async () => {
@@ -98,7 +247,8 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     }
 
     try {
-      if (currentRound === roundData.players.length) {
+      const totalRounds = numRounds || roundData.players.length;
+      if (currentRound === totalRounds) {
         await updateDoc(gameRef, {
           gameState: "ended"
         });
@@ -120,29 +270,140 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     }
   }
 
-  const showFirstPlayerChoices = () => {
+  // Get word display info (same logic as host)
+  const getWordDisplayInfo = (word) => {
+    // Use Firebase state for non-first-player, local state for first player
+    const revealedWords = firstPlayer ? globallyRevealedWords : (roundData.globallyRevealedWords || {});
+    const scoreInfo = revealedWords[word];
+    if (!scoreInfo) {
+      return { isRevealed: false, isCrossedOut: false, points: 0 };
+    }
+    // Cross out if: someone else revealed it, OR it's worth 0 points (everyone had it)
+    const isCrossedOut = scoreInfo.revealedBy !== currentPlayerName || scoreInfo.points === 0;
+    return {
+      isRevealed: true,
+      isCrossedOut,
+      points: scoreInfo.points
+    };
+  };
+
+  // Mobile reveal view - shows current word and player's own words
+  const showRevealView = () => {
+    const revealState = roundData.revealState || {};
+    const currentRevealWord = revealState.currentWord || '';
+    const myScores = firstPlayer ? playerScores : (roundData.playerScores || {});
+    const myScore = myScores[currentPlayerId] || 0;
+
+    // Get current player's found words
+    const currentPlayer = players.find(p => p.name === currentPlayerName);
+    const myWords = currentPlayer?.foundWords || [];
+
+    // Progress text
+    const currentRevealPlayer = playerOrder[revealPlayerIndex];
+    const progressText = currentRevealPlayer
+      ? `${currentRevealPlayer.name}'s words`
+      : '';
 
     return (
-      <div className='m-4'>
-        {!wordsRevealed ? (
-          <Button className="w-full" onClick={handleRevealWords}>
-            Reveal Words
-          </Button>
-        ) : (
-          <Button className="w-full" onClick={startNextRound}>
-            Start Next Round
-          </Button>
+      <div className="m-4">
+        {/* Current word being revealed */}
+        {currentRevealWord && (
+          <div className="bg-gray-800 border border-gray-600 p-4 rounded-lg mb-4">
+            <p className="text-sm text-gray-400 uppercase">Revealing</p>
+            <p className="text-3xl font-bold text-green-400 uppercase">{currentRevealWord}</p>
+          </div>
+        )}
+
+        {/* First player controls */}
+        {firstPlayer && !roundData.revealComplete && (
+          <div className="bg-gray-700 p-3 rounded-lg mb-4">
+            <p className="text-sm text-gray-300 mb-2">{progressText}</p>
+            <Button
+              className="w-full"
+              buttonType="large"
+              onClick={handleNextReveal}
+              disabled={isAnimating}
+            >
+              {isAnimating ? 'Revealing...' : 'Next'}
+            </Button>
+          </div>
+        )}
+
+        {/* Player's score */}
+        <div className="bg-gray-800 p-3 rounded-lg mb-4">
+          <p className="text-lg text-gray-300">
+            Your Score: <span className="text-green-400 font-bold">{myScore}</span> pts
+          </p>
+        </div>
+
+        {/* Player's own words */}
+        <div className="bg-gray-800 p-4 rounded-lg">
+          <p className="text-lg text-gray-300 mb-3 border-b border-gray-600 pb-2">Your Words</p>
+          <div className="grid grid-cols-2 gap-3">
+            {myWords.map((word, index) => {
+              const { isRevealed, isCrossedOut, points } = getWordDisplayInfo(word);
+              const isCurrentWord = currentRevealWord === word;
+
+              return (
+                <WordAndScore
+                  key={index}
+                  word={word}
+                  points={points}
+                  highlight={isCurrentWord}
+                  isRevealed={isRevealed}
+                  isCrossedOut={isCrossedOut}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Reveal complete - show next round button for first player */}
+        {roundData.revealComplete && (
+          <div className="mt-4">
+            {firstPlayer ? (
+              <Button className="w-full" buttonType="large" onClick={startNextRound}>
+                {currentRound === (numRounds || players.length) ? 'End Game' : 'Start Next Round'}
+              </Button>
+            ) : (
+              <p className="text-lg font-semibold text-gray-300 bg-gray-800 px-4 py-2 rounded-lg">
+                Waiting for <span className="text-green-500 font-bold">{players[0].name}</span> to {currentRound === (numRounds || players.length) ? 'end the game' : 'start next round'}
+              </p>
+            )}
+          </div>
         )}
       </div>
     );
   };
 
+  const showFirstPlayerChoices = () => {
+    // If reveal has started, show the reveal view
+    if (roundData.wordsRevealed) {
+      return showRevealView();
+    }
+
+    // Otherwise show the "Reveal Words" button
+    return (
+      <div className='m-4'>
+        <Button className="w-full" buttonType="large" onClick={handleRevealWords}>
+          Reveal Words
+        </Button>
+      </div>
+    );
+  };
+
   const showWaitingForNextRound = () => {
+    // If reveal has started, show the reveal view
+    if (roundData.wordsRevealed) {
+      return showRevealView();
+    }
+
+    // Otherwise show waiting message
     return (
       <p className="mx-4 text-lg font-semibold text-gray-300 bg-gray-800 px-4 py-2 rounded-lg shadow mt-4">
-        Times up! <br></br>Now <span className="text-green-500 font-bold">{players[0].name}</span> can reveal everyone's words.
-      </p >
-    )
+        Times up! <br></br>Now <span className="text-green-500 font-bold">{players[0].name}</span> can start the reveal.
+      </p>
+    );
   }
 
   const showMakeWords = () => {
@@ -187,6 +448,24 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
             </Button>
           ))}
         </div>
+        <div className="mt-2 border-t border-gray-600 pt-4">
+          <p className="text-lg mb-2">Or type your own:</p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={customWord}
+              onChange={(e) => setCustomWord(e.target.value.toUpperCase())}
+              className="flex-1 px-3 py-2 bg-gray-700 rounded text-white uppercase"
+              placeholder="Enter word..."
+            />
+            <Button
+              onClick={() => handleWordSelection(customWord)}
+              disabled={customWord.length < 6}
+            >
+              Use
+            </Button>
+          </div>
+        </div>
       </div>
     )
   };
@@ -203,6 +482,15 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
   }
 
   const displayRoundPage = () => {
+    // Show loading while roundData is being fetched
+    if (!roundData) {
+      return (
+        <div className="m-4 text-gray-300">
+          <div className="animate-pulse">Loading round...</div>
+        </div>
+      );
+    }
+
     const chooserName = players[currentPlayerIndex].name;
     const chooser = chooserName === currentPlayerName;
 

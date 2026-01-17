@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 
-function WordAndScore({ word, points, highlight, allPlayersHaveWord, isRevealed }) {
+function WordAndScore({ word, points, highlight, allPlayersHaveWord, isRevealed, isCrossedOut }) {
 
   // Combined flip, scale, and translate animation
   const [{ transform, boxShadow }, set] = useSpring(() => ({
@@ -29,14 +29,21 @@ function WordAndScore({ word, points, highlight, allPlayersHaveWord, isRevealed 
     transform
   }
 
+  const getPointsDisplay = () => {
+    if (!isRevealed) return null;
+    if (isCrossedOut) {
+      return <span className="text-red-400 ml-1">(0)</span>;
+    }
+    return <span className="text-green-400 ml-1">+{points}</span>;
+  };
 
   return (
 
     <animated.div
-      className={`text-white text-center ${!isRevealed ? 'blur-sm' : ''}`}
+      className={`text-center ${!isRevealed ? 'blur-sm text-white' : ''} ${isCrossedOut ? 'line-through text-gray-500' : 'text-white'}`}
       style={wordStyle}
     >
-      {word} {isRevealed && ` - ${points}`}
+      {word}{getPointsDisplay()}
     </animated.div>
   );
 }
