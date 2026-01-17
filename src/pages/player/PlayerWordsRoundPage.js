@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { doc, onSnapshot, updateDoc, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { CurrentGameContext } from '../../contexts/CurrentGameContext';
 import Button from '../../components/Button';
@@ -29,6 +29,9 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [globallyRevealedWords, setGloballyRevealedWords] = useState({});
   const [playerScores, setPlayerScores] = useState({});
+
+  // Ref to track if we've already restored state from Firebase (prevents re-restore on every update)
+  const hasRestoredState = useRef(false);
 
   const duration = gameTime * 60;
 
@@ -66,6 +69,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     setRevealWordIndex(0);
     setGloballyRevealedWords({});
     setPlayerScores({});
+    hasRestoredState.current = false;  // Reset restore flag for new round
 
     const roundsRef = collection(gameRef, "rounds");
     const q = query(roundsRef, where('roundNumber', '==', currentRound));
@@ -74,10 +78,38 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
       if (querySnapshot.size === 1) {
         const roundId = querySnapshot.docs[0].id;
         const _roundRef = doc(roundsRef, roundId);
-        onSnapshot(_roundRef, (doc) => {
+        onSnapshot(_roundRef, (docSnap) => {
           setRoundRef(_roundRef);
-          setRoundData(doc.data());
-          if (doc.data().word && !timer) {
+          const data = docSnap.data();
+          setRoundData(data);
+
+          // Restore state from Firebase on refresh (only once per round)
+          // This detects a page refresh: Firebase says reveal started but we haven't restored yet
+          if (data.wordsRevealed && !hasRestoredState.current) {
+            hasRestoredState.current = true;  // Mark as restored to prevent re-running
+            setWordsRevealed(true);
+            setTimesUp(true);
+
+            // Restore reveal state from Firebase
+            if (data.globallyRevealedWords) {
+              setGloballyRevealedWords(data.globallyRevealedWords);
+            }
+            if (data.playerScores) {
+              setPlayerScores(data.playerScores);
+            }
+            if (data.revealState) {
+              setRevealPlayerIndex(data.revealState.currentPlayerIndex || 0);
+              // +1 because we want to start at the next word after the last revealed one
+              setRevealWordIndex((data.revealState.currentWordIndex || 0) + 1);
+            }
+
+            // Restore player order for reveal display
+            const sortedPlayers = [...players].sort(
+              (a, b) => (b.foundWords?.length || 0) - (a.foundWords?.length || 0)
+            );
+            setPlayerOrder(sortedPlayers);
+          } else if (data.word && !timer && !data.wordsRevealed) {
+            // Only start timer if we're not in reveal phase
             timer = setTimeout(() => setTimesUp(true), duration * 1000);
           }
         });
@@ -99,6 +131,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
   }
 
   const handleRevealWords = async () => {
+    hasRestoredState.current = true;  // Prevent restore logic from overwriting our state
     setWordsRevealed(true);
 
     // Sort players by word count (most first) and fix this order
@@ -337,33 +370,34 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
           </div>
         )}
 
-        {/* All players scores - sorted by points */}
-        <div className="bg-gray-800 p-4 rounded-lg mb-4">
-          <p className="text-xl text-gray-400 mb-3 border-b border-gray-600 pb-2">Leaderboard</p>
-          <div className="flex flex-col gap-2">
-            {[...displayPlayerOrder]
-              .map(player => ({ ...player, score: myScores[player.id] || 0 }))
-              .sort((a, b) => b.score - a.score)
-              .map((player, index) => {
-                const isMe = player.name === currentPlayerName;
-                const isRevealing = displayPlayerOrder[currentRevealIdx]?.id === player.id;
-                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+        {/* All players scores - sorted by points - only show after reveal complete */}
+        {roundData.revealComplete && (
+          <div className="bg-gray-800 p-4 rounded-lg mb-4">
+            <p className="text-xl text-gray-400 mb-3 border-b border-gray-600 pb-2">Leaderboard</p>
+            <div className="flex flex-col gap-2">
+              {[...displayPlayerOrder]
+                .map(player => ({ ...player, score: myScores[player.id] || 0 }))
+                .sort((a, b) => b.score - a.score)
+                .map((player, index) => {
+                  const isMe = player.name === currentPlayerName;
+                  const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
 
-                return (
-                  <div
-                    key={player.id || index}
-                    className={`flex justify-between items-center px-3 py-2 rounded-lg
-                      ${isRevealing ? 'border-2 border-blue-400 bg-blue-900/50' : isMe ? 'bg-gray-700' : 'bg-gray-900'}`}
-                  >
-                    <span className={`text-xl ${isMe ? 'font-bold text-white' : 'text-gray-300'}`}>
-                      {medal} {player.name}
-                    </span>
-                    <span className="text-xl font-bold text-green-400">{player.score}</span>
-                  </div>
-                );
-              })}
+                  return (
+                    <div
+                      key={player.id || index}
+                      className={`flex justify-between items-center px-3 py-2 rounded-lg
+                        ${isMe ? 'bg-gray-700' : 'bg-gray-900'}`}
+                    >
+                      <span className={`text-xl ${isMe ? 'font-bold text-white' : 'text-gray-300'}`}>
+                        {medal} {player.name}
+                      </span>
+                      <span className="text-xl font-bold text-green-400">{player.score}</span>
+                    </div>
+                  );
+                })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Player's own words */}
         <div className="bg-gray-800 p-4 rounded-lg">

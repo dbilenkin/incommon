@@ -13,7 +13,7 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
   useEffect(() => {
     const loadWordList = async () => {
       try {
-        const response = await fetch('words/wordlist.txt');
+        const response = await fetch('words/base_words.txt');
         if (!response.ok) {
           throw new Error('Failed to load word list');
         }
