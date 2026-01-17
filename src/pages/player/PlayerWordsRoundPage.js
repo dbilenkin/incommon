@@ -298,8 +298,16 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     const currentPlayer = players.find(p => p.name === currentPlayerName);
     const myWords = currentPlayer?.foundWords || [];
 
+    // For non-first players, reconstruct player order from players prop
+    const displayPlayerOrder = playerOrder.length > 0
+      ? playerOrder
+      : [...players].sort((a, b) => (b.foundWords?.length || 0) - (a.foundWords?.length || 0));
+
+    // Get current reveal player index from Firebase for non-first players
+    const currentRevealIdx = firstPlayer ? revealPlayerIndex : (revealState.currentPlayerIndex || 0);
+
     // Progress text
-    const currentRevealPlayer = playerOrder[revealPlayerIndex];
+    const currentRevealPlayer = displayPlayerOrder[currentRevealIdx];
     const progressText = currentRevealPlayer
       ? `${currentRevealPlayer.name}'s words`
       : '';
@@ -308,18 +316,18 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
       <div className="m-4">
         {/* Current word being revealed */}
         {currentRevealWord && (
-          <div className="bg-gray-800 border border-gray-600 p-4 rounded-lg mb-4">
-            <p className="text-sm text-gray-400 uppercase">Revealing</p>
-            <p className="text-3xl font-bold text-green-400 uppercase">{currentRevealWord}</p>
+          <div className="bg-gray-800 border-2 border-green-500 p-5 rounded-lg mb-4">
+            <p className="text-lg text-gray-400 uppercase">Revealing</p>
+            <p className="text-5xl font-bold text-green-400 uppercase">{currentRevealWord}</p>
           </div>
         )}
 
         {/* First player controls */}
         {firstPlayer && !roundData.revealComplete && (
-          <div className="bg-gray-700 p-3 rounded-lg mb-4">
-            <p className="text-sm text-gray-300 mb-2">{progressText}</p>
+          <div className="bg-gray-700 p-4 rounded-lg mb-4">
+            <p className="text-lg text-gray-300 mb-3">{progressText}</p>
             <Button
-              className="w-full"
+              className="w-full text-xl"
               buttonType="large"
               onClick={handleNextReveal}
               disabled={isAnimating}
@@ -329,17 +337,38 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
           </div>
         )}
 
-        {/* Player's score */}
-        <div className="bg-gray-800 p-3 rounded-lg mb-4">
-          <p className="text-lg text-gray-300">
-            Your Score: <span className="text-green-400 font-bold">{myScore}</span> pts
-          </p>
+        {/* All players scores - sorted by points */}
+        <div className="bg-gray-800 p-4 rounded-lg mb-4">
+          <p className="text-xl text-gray-400 mb-3 border-b border-gray-600 pb-2">Leaderboard</p>
+          <div className="flex flex-col gap-2">
+            {[...displayPlayerOrder]
+              .map(player => ({ ...player, score: myScores[player.id] || 0 }))
+              .sort((a, b) => b.score - a.score)
+              .map((player, index) => {
+                const isMe = player.name === currentPlayerName;
+                const isRevealing = displayPlayerOrder[currentRevealIdx]?.id === player.id;
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+
+                return (
+                  <div
+                    key={player.id || index}
+                    className={`flex justify-between items-center px-3 py-2 rounded-lg
+                      ${isRevealing ? 'border-2 border-blue-400 bg-blue-900/50' : isMe ? 'bg-gray-700' : 'bg-gray-900'}`}
+                  >
+                    <span className={`text-xl ${isMe ? 'font-bold text-white' : 'text-gray-300'}`}>
+                      {medal} {player.name}
+                    </span>
+                    <span className="text-xl font-bold text-green-400">{player.score}</span>
+                  </div>
+                );
+              })}
+          </div>
         </div>
 
         {/* Player's own words */}
         <div className="bg-gray-800 p-4 rounded-lg">
-          <p className="text-lg text-gray-300 mb-3 border-b border-gray-600 pb-2">Your Words</p>
-          <div className="grid grid-cols-2 gap-3">
+          <p className="text-xl text-gray-400 mb-3 border-b border-gray-600 pb-2">Your Words</p>
+          <div className="grid grid-cols-2 gap-3 text-2xl">
             {myWords.map((word, index) => {
               const { isRevealed, isCrossedOut, points } = getWordDisplayInfo(word);
               const isCurrentWord = currentRevealWord === word;
@@ -350,8 +379,8 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
                   word={word}
                   points={points}
                   highlight={isCurrentWord}
-                  isRevealed={isRevealed}
-                  isCrossedOut={isCrossedOut}
+                  isRevealed={true}
+                  isCrossedOut={isRevealed ? isCrossedOut : false}
                 />
               );
             })}
@@ -366,7 +395,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
                 {currentRound === (numRounds || players.length) ? 'End Game' : 'Start Next Round'}
               </Button>
             ) : (
-              <p className="text-lg font-semibold text-gray-300 bg-gray-800 px-4 py-2 rounded-lg">
+              <p className="text-xl font-semibold text-gray-300 bg-gray-800 px-4 py-3 rounded-lg">
                 Waiting for <span className="text-green-500 font-bold">{players[0].name}</span> to {currentRound === (numRounds || players.length) ? 'end the game' : 'start next round'}
               </p>
             )}
@@ -400,7 +429,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
 
     // Otherwise show waiting message
     return (
-      <p className="mx-4 text-lg font-semibold text-gray-300 bg-gray-800 px-4 py-2 rounded-lg shadow mt-4">
+      <p className="mx-4 text-xl font-semibold text-gray-300 bg-gray-800 px-4 py-3 rounded-lg shadow mt-4">
         Times up! <br></br>Now <span className="text-green-500 font-bold">{players[0].name}</span> can start the reveal.
       </p>
     );
@@ -410,9 +439,9 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     return (
       <div className='max-w-screen-sm bg-gray-800'>
         <div className="deckContainer mb-4 mx-auto bg-gray-800">
-          <p className="flex justify-between items-center font-semibold text-gray-300 bg-gray-800 border-b border-gray-500 px-2 py-1">
-            <span className='text-md'>Round {currentRound}</span>
-            <span className='text-lg font-bold uppercase text-green-500'>{roundData.word}</span>
+          <p className="flex justify-between items-center font-semibold text-gray-300 bg-gray-800 border-b border-gray-500 px-3 py-2">
+            <span className='text-lg'>Round {currentRound}</span>
+            <span className='text-2xl font-bold uppercase text-green-500'>{roundData.word}</span>
           </p>
           <div>
             <OutOfWordsWords 
@@ -435,7 +464,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     }
 
     return (
-      <div className='bg-gray-800 mx-4 text-gray-300 text-lg p-6 mt-4 rounded-lg'>
+      <div className='bg-gray-800 mx-4 text-gray-300 text-xl p-6 mt-4 rounded-lg'>
         <p className="text-2xl font-semibold mb-4">Choose the word for <br></br>round {currentRound}</p>
         <div className="">
           {wordList.map((wordOption, index) => (
@@ -443,24 +472,25 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
               key={index}
               onClick={() => handleWordSelection(wordOption)}
               buttonType='large'
-              className="w-full mb-6">
+              className="w-full mb-6 text-xl">
               {wordOption}
             </Button>
           ))}
         </div>
         <div className="mt-2 border-t border-gray-600 pt-4">
-          <p className="text-lg mb-2">Or type your own:</p>
+          <p className="text-xl mb-2">Or type your own:</p>
           <div className="flex gap-2">
             <input
               type="text"
               value={customWord}
               onChange={(e) => setCustomWord(e.target.value.toUpperCase())}
-              className="flex-1 px-3 py-2 bg-gray-700 rounded text-white uppercase"
+              className="flex-1 px-4 py-3 bg-gray-700 rounded text-white uppercase text-xl"
               placeholder="Enter word..."
             />
             <Button
               onClick={() => handleWordSelection(customWord)}
               disabled={customWord.length < 6}
+              className="text-xl px-4"
             >
               Use
             </Button>
@@ -474,7 +504,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
   const showWaitingForWord = () => {
     return (
       <div className='m-4 text-gray-300 bg-gray-800 rounded-lg shadow'>
-        <p className="text-2xl font-semibold  px-4 py-2">
+        <p className="text-2xl font-semibold px-4 py-4">
           Waiting for <span className="text-green-500 font-bold">{players[currentPlayerIndex].name}</span> <br></br>to choose the word
         </p>
       </div>

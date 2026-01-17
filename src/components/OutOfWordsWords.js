@@ -78,16 +78,16 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
         <div className="controls-container flex items-center justify-between gap-4">
           <button
             onClick={handleBackspaceClick}
-            className="backspace-button px-3 py-2 bg-red-500 text-white rounded shadow"
+            className="backspace-button px-4 py-3 bg-red-500 text-white rounded shadow text-xl"
           >
             Delete
           </button>
-          <div className="current-word-container mb-4 text-xl">
+          <div className="current-word-container mb-4 text-3xl">
             <span className="guess font-bold">{currentWord}</span>
           </div>
           <button
             onClick={handleSubmitClick}
-            className="submit-button px-3 py-2 bg-green-500 text-white rounded shadow"
+            className="submit-button px-4 py-3 bg-green-500 text-white rounded shadow text-xl"
           >
             Enter
           </button>
@@ -98,17 +98,17 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
               key={index}
               onClick={() => handleLetterClick(letter, index)}
               disabled={isLetterSelected(index)}
-              className={`letter-button w-12 m-1 px-4 py-2 rounded shadow text-2xl ${isLetterSelected(index) ? 'bg-gray-500 text-gray-300' : 'bg-blue-500 text-white'}`}
+              className={`letter-button w-14 h-14 m-1 rounded shadow text-3xl font-bold ${isLetterSelected(index) ? 'bg-gray-500 text-gray-300' : 'bg-blue-500 text-white'}`}
             >
               {letter.toUpperCase()}
             </button>
           ))}
         </div>
         <div className="found-words-container mt-6 bg-gray-900 p-4 rounded-lg">
-          <h3 className="text-xl font-bold mb-4">Found Words:</h3>
+          <h3 className="text-2xl font-bold mb-4">Found Words:</h3>
           <div className="grid grid-cols-3 gap-2">
             {foundWords.length > 0 && foundWords.map((foundWord, index) => (
-              <div key={index} className="text-white">
+              <div key={index} className="text-white text-xl">
                 {foundWord}
               </div>
             ))}

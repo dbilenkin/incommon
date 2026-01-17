@@ -68,9 +68,11 @@ const HostWordsRoundPage = ({ gameData, gameRef, players }) => {
   const currentWord = revealState.currentWord || '';
 
   // Get display list - use playerOrder during reveal, otherwise sort players
-  const displayPlayers = playerOrder.length > 0
+  // Filter out any undefined players to prevent errors during Firebase updates
+  const displayPlayers = (playerOrder.length > 0
     ? playerOrder
-    : [...players].sort((a, b) => (b.foundWords?.length || 0) - (a.foundWords?.length || 0));
+    : [...players].sort((a, b) => (b.foundWords?.length || 0) - (a.foundWords?.length || 0))
+  ).filter(p => p != null);
 
   const getWordDisplayInfo = (word, playerName) => {
     const scoreInfo = globallyRevealedWords[word];
@@ -109,8 +111,8 @@ const HostWordsRoundPage = ({ gameData, gameRef, players }) => {
                   {player.foundWords?.length || 0} words | {playerScores[player.id] || 0} pts
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                {player.foundWords?.map((foundWord, index) => {
+              <div className="grid grid-cols-2 gap-2 text-2xl">
+                {Array.isArray(player.foundWords) && player.foundWords.map((foundWord, index) => {
                   const { isRevealed, isCrossedOut, points } = getWordDisplayInfo(foundWord, player.name);
                   const isCurrentWord = currentWord === foundWord;
 
