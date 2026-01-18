@@ -30,6 +30,10 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
   const [globallyRevealedWords, setGloballyRevealedWords] = useState({});
   const [playerScores, setPlayerScores] = useState({});
 
+  // Missed words state
+  const [validWordList, setValidWordList] = useState([]);
+  const [missedWords, setMissedWords] = useState([]);
+
   const duration = gameTime * 60;
 
   let timer;
@@ -93,6 +97,63 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
   useEffect(() => {
     const currPlayer = players.find(player => player.name === currentPlayerName);
   }, [players, currentPlayerName]);
+
+  // Load valid word list for missed words calculation
+  useEffect(() => {
+    const loadWordList = async () => {
+      try {
+        const response = await fetch('words/valid_words.txt');
+        if (response.ok) {
+          const text = await response.text();
+          const words = text.split('\n').map(w => w.trim().toUpperCase()).filter(w => w);
+          setValidWordList(words);
+        }
+      } catch (err) {
+        console.error('Failed to load word list:', err);
+      }
+    };
+    loadWordList();
+  }, []);
+
+  // Calculate missed words when reveal completes
+  useEffect(() => {
+    if (!roundData?.revealComplete || !roundData?.word || validWordList.length === 0) return;
+
+    const mainWord = roundData.word.toUpperCase();
+
+    // Helper: check if a word can be formed from the main word's letters
+    const canFormWord = (word, availableLetters) => {
+      const letterCount = {};
+      for (const letter of availableLetters) {
+        letterCount[letter] = (letterCount[letter] || 0) + 1;
+      }
+      for (const letter of word) {
+        if (!letterCount[letter] || letterCount[letter] === 0) {
+          return false;
+        }
+        letterCount[letter]--;
+      }
+      return true;
+    };
+
+    // Find all possible words (5+ letters) that can be formed, excluding the original word
+    const possibleWords = validWordList.filter(word =>
+      word.length >= 5 && word !== mainWord && canFormWord(word, mainWord)
+    );
+
+    // Get all words found by all players
+    const allFoundWords = new Set();
+    players.forEach(p => {
+      (p.foundWords || []).forEach(w => allFoundWords.add(w.toUpperCase()));
+    });
+
+    // Missed words = possible words that nobody found
+    const missed = possibleWords
+      .filter(w => !allFoundWords.has(w))
+      .sort((a, b) => b.length - a.length || a.localeCompare(b));
+
+    setMissedWords(missed);
+  }, [roundData?.revealComplete, roundData?.word, validWordList, players]);
 
   const handleWordSelection = async (wordOption) => {
     setWord(wordOption);
@@ -320,7 +381,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
         {/* Current word being revealed */}
         {currentRevealWord && (
           <div className="bg-gray-800 border-2 border-green-500 p-5 rounded-lg mb-4">
-            <p className="text-lg text-gray-400 uppercase">Revealing</p>
+            <p className="text-2xl font-semibold text-gray-300 mb-2">{currentRevealPlayer?.name}'s Words</p>
             <p className="text-5xl font-bold text-green-400 uppercase">{currentRevealWord}</p>
           </div>
         )}
@@ -369,6 +430,22 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
           </div>
         )}
 
+        {/* Missed words - show after reveal complete */}
+        {roundData.revealComplete && missedWords.length > 0 && (
+          <div className="bg-gray-800 p-4 rounded-lg mb-4">
+            <p className="text-xl text-gray-400 mb-3 border-b border-gray-600 pb-2">
+              Missed Words ({missedWords.length})
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {missedWords.map((word, index) => (
+                <span key={index} className="text-gray-200 text-lg">
+                  {word}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Player's own words */}
         <div className="bg-gray-800 p-4 rounded-lg">
           <p className="text-xl text-gray-400 mb-3 border-b border-gray-600 pb-2">Your Words</p>
@@ -383,8 +460,8 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
                   word={word}
                   points={points}
                   highlight={isCurrentWord}
-                  isRevealed={true}
-                  isCrossedOut={isRevealed ? isCrossedOut : false}
+                  isRevealed={isRevealed}
+                  isCrossedOut={isCrossedOut}
                 />
               );
             })}

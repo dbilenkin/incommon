@@ -25,7 +25,7 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
   useEffect(() => {
     const loadWordList = async () => {
       try {
-        const response = await fetch('words/base_words.txt');
+        const response = await fetch('words/valid_words.txt');
         if (!response.ok) {
           throw new Error('Failed to load word list');
         }
@@ -58,6 +58,8 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
   const handleSubmitClick = () => {
     if (currentWord.length < minWordLength) {
       alert("too short");
+    } else if (currentWord.toLowerCase() === word.toLowerCase()) {
+      alert("Can't use the original word!");
     } else if (foundWords.includes(currentWord)) {
       alert("already found!");
     } else if (wordList.includes(currentWord.toLowerCase())) {

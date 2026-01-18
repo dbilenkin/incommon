@@ -174,19 +174,54 @@ export function getRandomWords(deckType) {
 export function getWordsOutOfWordsWords() {
   const randomWords = [];
   const allWords = words['outofwords'];
-  const numWordsToShow = 5;
-  for (let i = 0; i < numWordsToShow; i++) {
-    let randomIndexFound = false;
-    while (!randomIndexFound) {
-      const randomTry = Math.floor(Math.random() * allWords.length)
-      const randomWord = allWords[randomTry].toUpperCase();
-      if (!allChosenWords.includes(randomWord)) {
-        randomWords.push(randomWord);
-        allChosenWords.push(randomWord);
-        randomIndexFound = true;
+
+  // Group words by length
+  const wordsByLength = {
+    7: allWords.filter(w => w.length === 7),
+    8: allWords.filter(w => w.length === 8),
+    9: allWords.filter(w => w.length === 9)
+  };
+
+  // Helper to pick a random unused word from a list
+  const pickRandomWord = (wordList) => {
+    let attempts = 0;
+    while (attempts < 100) {
+      const randomIndex = Math.floor(Math.random() * wordList.length);
+      const word = wordList[randomIndex].toUpperCase();
+      if (!allChosenWords.includes(word) && !randomWords.includes(word)) {
+        return word;
       }
+      attempts++;
+    }
+    return null;
+  };
+
+  // Pick one word of each length (7, 8, 9)
+  for (const length of [7, 8, 9]) {
+    const word = pickRandomWord(wordsByLength[length]);
+    if (word) {
+      randomWords.push(word);
+      allChosenWords.push(word);
     }
   }
+
+  // Fill remaining slots (up to 5 total) with random words from any length
+  while (randomWords.length < 5) {
+    const word = pickRandomWord(allWords);
+    if (word) {
+      randomWords.push(word);
+      allChosenWords.push(word);
+    } else {
+      break;
+    }
+  }
+
+  // Shuffle the result so lengths aren't always in order
+  for (let i = randomWords.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [randomWords[i], randomWords[j]] = [randomWords[j], randomWords[i]];
+  }
+
   return randomWords;
 }
 
