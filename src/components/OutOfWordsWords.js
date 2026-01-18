@@ -9,6 +9,18 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
   const [wordList, setWordList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Track display order of letters (array of original indices)
+  const [letterOrder, setLetterOrder] = useState(() => letters.map((_, i) => i));
+
+  // Shuffle the letter display order
+  const handleScramble = () => {
+    const newOrder = [...letterOrder];
+    for (let i = newOrder.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newOrder[i], newOrder[j]] = [newOrder[j], newOrder[i]];
+    }
+    setLetterOrder(newOrder);
+  };
 
   useEffect(() => {
     const loadWordList = async () => {
@@ -93,16 +105,24 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
           </button>
         </div>
         <div className="letters-container flex flex-wrap justify-center mb-4">
-          {letters.map((letter, index) => (
+          {letterOrder.map((originalIndex) => (
             <button
-              key={index}
-              onClick={() => handleLetterClick(letter, index)}
-              disabled={isLetterSelected(index)}
-              className={`letter-button w-14 h-14 m-1 rounded shadow text-3xl font-bold ${isLetterSelected(index) ? 'bg-gray-500 text-gray-300' : 'bg-blue-500 text-white'}`}
+              key={originalIndex}
+              onClick={() => handleLetterClick(letters[originalIndex], originalIndex)}
+              disabled={isLetterSelected(originalIndex)}
+              className={`letter-button w-14 h-14 m-1 rounded shadow text-3xl font-bold ${isLetterSelected(originalIndex) ? 'bg-gray-500 text-gray-300' : 'bg-blue-500 text-white'}`}
             >
-              {letter.toUpperCase()}
+              {letters[originalIndex].toUpperCase()}
             </button>
           ))}
+        </div>
+        <div className="flex justify-center mb-4">
+          <button
+            onClick={handleScramble}
+            className="px-4 py-2 bg-gray-600 text-white rounded shadow text-lg"
+          >
+            Scramble
+          </button>
         </div>
         <div className="found-words-container mt-6 bg-gray-900 p-4 rounded-lg">
           <h3 className="text-2xl font-bold mb-4">Found Words:</h3>

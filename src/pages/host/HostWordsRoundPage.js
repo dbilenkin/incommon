@@ -79,8 +79,8 @@ const HostWordsRoundPage = ({ gameData, gameRef, players }) => {
     if (!scoreInfo) {
       return { isRevealed: false, isCrossedOut: false, points: 0 };
     }
-    // Cross out if: someone else revealed it, OR it's worth 0 points (everyone had it)
-    const isCrossedOut = scoreInfo.revealedBy !== playerName || scoreInfo.points === 0;
+    // Cross out only if worth 0 points (everyone had it)
+    const isCrossedOut = scoreInfo.points === 0;
     return {
       isRevealed: true,
       isCrossedOut,

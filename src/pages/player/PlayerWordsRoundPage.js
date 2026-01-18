@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { doc, onSnapshot, updateDoc, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { CurrentGameContext } from '../../contexts/CurrentGameContext';
 import Button from '../../components/Button';
@@ -29,9 +29,6 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [globallyRevealedWords, setGloballyRevealedWords] = useState({});
   const [playerScores, setPlayerScores] = useState({});
-
-  // Ref to track if we've already restored state from Firebase (prevents re-restore on every update)
-  const hasRestoredState = useRef(false);
 
   const duration = gameTime * 60;
 
@@ -69,7 +66,6 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     setRevealWordIndex(0);
     setGloballyRevealedWords({});
     setPlayerScores({});
-    hasRestoredState.current = false;  // Reset restore flag for new round
 
     const roundsRef = collection(gameRef, "rounds");
     const q = query(roundsRef, where('roundNumber', '==', currentRound));
@@ -83,33 +79,8 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
           const data = docSnap.data();
           setRoundData(data);
 
-          // Restore state from Firebase on refresh (only once per round)
-          // This detects a page refresh: Firebase says reveal started but we haven't restored yet
-          if (data.wordsRevealed && !hasRestoredState.current) {
-            hasRestoredState.current = true;  // Mark as restored to prevent re-running
-            setWordsRevealed(true);
-            setTimesUp(true);
-
-            // Restore reveal state from Firebase
-            if (data.globallyRevealedWords) {
-              setGloballyRevealedWords(data.globallyRevealedWords);
-            }
-            if (data.playerScores) {
-              setPlayerScores(data.playerScores);
-            }
-            if (data.revealState) {
-              setRevealPlayerIndex(data.revealState.currentPlayerIndex || 0);
-              // +1 because we want to start at the next word after the last revealed one
-              setRevealWordIndex((data.revealState.currentWordIndex || 0) + 1);
-            }
-
-            // Restore player order for reveal display
-            const sortedPlayers = [...players].sort(
-              (a, b) => (b.foundWords?.length || 0) - (a.foundWords?.length || 0)
-            );
-            setPlayerOrder(sortedPlayers);
-          } else if (data.word && !timer && !data.wordsRevealed) {
-            // Only start timer if we're not in reveal phase
+          // Start timer when word is chosen (only if not already in reveal phase)
+          if (data.word && !timer && !data.wordsRevealed) {
             timer = setTimeout(() => setTimesUp(true), duration * 1000);
           }
         });
@@ -131,7 +102,6 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
   }
 
   const handleRevealWords = async () => {
-    hasRestoredState.current = true;  // Prevent restore logic from overwriting our state
     setWordsRevealed(true);
 
     // Sort players by word count (most first) and fix this order
@@ -311,8 +281,8 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     if (!scoreInfo) {
       return { isRevealed: false, isCrossedOut: false, points: 0 };
     }
-    // Cross out if: someone else revealed it, OR it's worth 0 points (everyone had it)
-    const isCrossedOut = scoreInfo.revealedBy !== currentPlayerName || scoreInfo.points === 0;
+    // Cross out only if worth 0 points (everyone had it)
+    const isCrossedOut = scoreInfo.points === 0;
     return {
       isRevealed: true,
       isCrossedOut,
