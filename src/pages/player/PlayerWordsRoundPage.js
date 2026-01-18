@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { doc, onSnapshot, updateDoc, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { CurrentGameContext } from '../../contexts/CurrentGameContext';
 import Button from '../../components/Button';
@@ -33,6 +33,9 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
   // Missed words state
   const [validWordList, setValidWordList] = useState([]);
   const [missedWords, setMissedWords] = useState([]);
+
+  // Ref to track if we've initialized from Firebase (for refresh recovery)
+  const hasInitializedFromFirebase = useRef(false);
 
   const duration = gameTime * 60;
 
@@ -70,6 +73,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     setRevealWordIndex(0);
     setGloballyRevealedWords({});
     setPlayerScores({});
+    hasInitializedFromFirebase.current = false;  // Reset for new round
 
     const roundsRef = collection(gameRef, "rounds");
     const q = query(roundsRef, where('roundNumber', '==', currentRound));
@@ -83,7 +87,41 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
           const data = docSnap.data();
           setRoundData(data);
 
-          // Start timer when word is chosen (only if not already in reveal phase)
+          // Restore reveal state on refresh (only once)
+          if (data.wordsRevealed && !hasInitializedFromFirebase.current) {
+            hasInitializedFromFirebase.current = true;
+
+            // CRITICAL: Restore foundWords FIRST, before setting timesUp
+            // (because timesUp triggers a useEffect that writes foundWords to Firebase)
+            const currentPlayer = players.find(p => p.name === currentPlayerName);
+            if (currentPlayer?.foundWords) {
+              setFoundWords(currentPlayer.foundWords);
+            }
+
+            setTimesUp(true);
+            setWordsRevealed(true);
+
+            // Restore reveal progress from Firebase
+            if (data.globallyRevealedWords) {
+              setGloballyRevealedWords(data.globallyRevealedWords);
+            }
+            if (data.playerScores) {
+              setPlayerScores(data.playerScores);
+            }
+            if (data.revealState) {
+              setRevealPlayerIndex(data.revealState.currentPlayerIndex || 0);
+              // +1 to move to next word after the last revealed one
+              setRevealWordIndex((data.revealState.currentWordIndex || 0) + 1);
+            }
+
+            // Restore player order (needed for first player to continue reveal)
+            const sortedPlayers = [...players].sort(
+              (a, b) => (b.foundWords?.length || 0) - (a.foundWords?.length || 0)
+            );
+            setPlayerOrder(sortedPlayers);
+          }
+
+          // Start timer when word is chosen (independent of initialization flag)
           if (data.word && !timer && !data.wordsRevealed) {
             timer = setTimeout(() => setTimesUp(true), duration * 1000);
           }
@@ -163,6 +201,8 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
   }
 
   const handleRevealWords = async () => {
+    // Mark as initialized so we don't restore from Firebase on updates
+    hasInitializedFromFirebase.current = true;
     setWordsRevealed(true);
 
     // Sort players by word count (most first) and fix this order
@@ -376,36 +416,87 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
       ? `${currentRevealPlayer.name}'s words`
       : '';
 
-    return (
-      <div className="m-4">
-        {/* Current word being revealed */}
-        {currentRevealWord && (
-          <div className="bg-gray-800 border-2 border-green-500 p-5 rounded-lg mb-4">
-            <p className="text-2xl font-semibold text-gray-300 mb-2">{currentRevealPlayer?.name}'s Words</p>
-            <p className="text-5xl font-bold text-green-400 uppercase">{currentRevealWord}</p>
-          </div>
-        )}
+    // Get current word info for display
+    const revealedWords = firstPlayer ? globallyRevealedWords : (roundData.globallyRevealedWords || {});
+    const currentWordInfo = currentRevealWord ? revealedWords[currentRevealWord] : null;
+    const currentWordPoints = currentWordInfo?.points || 0;
+    const currentWordLength = currentRevealWord?.length || 0;
 
-        {/* First player controls */}
-        {firstPlayer && !roundData.revealComplete && (
-          <div className="bg-gray-700 p-4 rounded-lg mb-4">
-            <p className="text-lg text-gray-300 mb-3">{progressText}</p>
-            <Button
-              className="w-full text-xl"
-              buttonType="large"
-              onClick={handleNextReveal}
-              disabled={isAnimating}
-            >
-              {isAnimating ? 'Revealing...' : 'Next'}
-            </Button>
+    // Find all players who have the current word
+    const playersWithCurrentWord = currentRevealWord
+      ? displayPlayerOrder.filter(p => p.foundWords?.includes(currentRevealWord)).map(p => p.name)
+      : [];
+
+    // Get celebration based on word length (same as WordAndScore)
+    const getCelebration = (length, points) => {
+      if (points === 0) return { emoji: '', text: '', textClass: '' };
+      if (length >= 7) return { emoji: '🔥', text: 'INCREDIBLE!!!', textClass: 'text-yellow-400 font-black italic' };
+      if (length === 6) return { emoji: '⭐', text: 'Amazing!', textClass: 'text-yellow-300 font-bold italic' };
+      if (length === 5) return { emoji: '✨', text: 'nice', textClass: 'text-blue-300 font-semibold' };
+      return { emoji: '', text: '', textClass: '' };
+    };
+
+    const celebration = getCelebration(currentWordLength, currentWordPoints);
+
+    return (
+      <div className="m-2">
+        {/* Reveal header with word, score, and players */}
+        {!roundData.revealComplete && (
+          <div className="bg-gray-800 border border-green-500 rounded-lg mb-2 p-3">
+            {/* Top row: whose words + Next button */}
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-lg text-gray-400">{currentRevealPlayer?.name}'s Words</p>
+              {firstPlayer && (
+                <button
+                  onClick={handleNextReveal}
+                  disabled={isAnimating}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 text-white font-semibold rounded-lg text-lg whitespace-nowrap"
+                >
+                  Next
+                </button>
+              )}
+            </div>
+
+            {/* Word and score display */}
+            <div className="flex items-center justify-center gap-3 my-2">
+              <span className="text-4xl font-bold text-green-400 uppercase">
+                {currentRevealWord || '—'}
+              </span>
+              {currentWordInfo && (
+                <span className={`text-3xl font-bold ${currentWordPoints > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {currentWordPoints > 0 ? `+${currentWordPoints}` : '(0)'}
+                </span>
+              )}
+            </div>
+
+            {/* Celebration for 5+ letter words */}
+            {celebration.text && currentWordInfo && (
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <span className="text-2xl">{celebration.emoji}</span>
+                <span className={`text-xl ${celebration.textClass}`}>{celebration.text}</span>
+              </div>
+            )}
+
+            {/* Players who had this word */}
+            {currentWordInfo && playersWithCurrentWord.length > 0 && (
+              <div className="bg-gray-900 rounded-lg px-3 py-2 mt-2">
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {playersWithCurrentWord.map((name, idx) => (
+                    <span key={idx} className="bg-gray-700 text-gray-200 px-2 py-1 rounded text-base">
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* All players scores - sorted by points - only show after reveal complete */}
         {roundData.revealComplete && (
-          <div className="bg-gray-800 p-4 rounded-lg mb-4">
-            <p className="text-xl text-gray-400 mb-3 border-b border-gray-600 pb-2">Leaderboard</p>
-            <div className="flex flex-col gap-2">
+          <div className="bg-gray-800 p-3 rounded-lg mb-2">
+            <p className="text-lg text-gray-400 mb-2 border-b border-gray-600 pb-1">Leaderboard</p>
+            <div className="flex flex-col gap-1">
               {[...displayPlayerOrder]
                 .map(player => ({ ...player, score: myScores[player.id] || 0 }))
                 .sort((a, b) => b.score - a.score)
@@ -416,7 +507,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
                   return (
                     <div
                       key={player.id || index}
-                      className={`flex justify-between items-center px-3 py-2 rounded-lg
+                      className={`flex justify-between items-center px-2 py-1 rounded
                         ${isMe ? 'bg-gray-700' : 'bg-gray-900'}`}
                     >
                       <span className={`text-xl ${isMe ? 'font-bold text-white' : 'text-gray-300'}`}>
@@ -432,13 +523,13 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
 
         {/* Missed words - show after reveal complete */}
         {roundData.revealComplete && missedWords.length > 0 && (
-          <div className="bg-gray-800 p-4 rounded-lg mb-4">
-            <p className="text-xl text-gray-400 mb-3 border-b border-gray-600 pb-2">
+          <div className="bg-gray-800 p-3 rounded-lg mb-2">
+            <p className="text-lg text-gray-400 mb-2 border-b border-gray-600 pb-1">
               Missed Words ({missedWords.length})
             </p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1 text-lg">
               {missedWords.map((word, index) => (
-                <span key={index} className="text-gray-200 text-lg">
+                <span key={index} className="text-gray-200">
                   {word}
                 </span>
               ))}
@@ -447,9 +538,9 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
         )}
 
         {/* Player's own words */}
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <p className="text-xl text-gray-400 mb-3 border-b border-gray-600 pb-2">Your Words</p>
-          <div className="grid grid-cols-2 gap-3 text-2xl">
+        <div className="bg-gray-800 p-3 rounded-lg">
+          <p className="text-lg text-gray-400 mb-2 border-b border-gray-600 pb-1">Your Words ({myWords.length})</p>
+          <div className="grid grid-cols-2 gap-1 text-xl">
             {myWords.map((word, index) => {
               const { isRevealed, isCrossedOut, points } = getWordDisplayInfo(word);
               const isCurrentWord = currentRevealWord === word;
@@ -470,14 +561,17 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
 
         {/* Reveal complete - show next round button for first player */}
         {roundData.revealComplete && (
-          <div className="mt-4">
+          <div className="mt-2">
             {firstPlayer ? (
-              <Button className="w-full" buttonType="large" onClick={startNextRound}>
-                {currentRound === (numRounds || players.length) ? 'End Game' : 'Start Next Round'}
-              </Button>
+              <button
+                onClick={startNextRound}
+                className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg text-xl"
+              >
+                {currentRound === (numRounds || players.length) ? 'End Game' : 'Next Round'}
+              </button>
             ) : (
-              <p className="text-xl font-semibold text-gray-300 bg-gray-800 px-4 py-3 rounded-lg">
-                Waiting for <span className="text-green-500 font-bold">{players[0].name}</span> to {currentRound === (numRounds || players.length) ? 'end the game' : 'start next round'}
+              <p className="text-xl text-gray-300 bg-gray-800 px-3 py-3 rounded-lg text-center">
+                Waiting for <span className="text-green-500 font-bold">{players[0].name}</span>
               </p>
             )}
           </div>
@@ -510,7 +604,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
 
     // Otherwise show waiting message
     return (
-      <p className="mx-4 text-xl font-semibold text-gray-300 bg-gray-800 px-4 py-3 rounded-lg shadow mt-4">
+      <p className="mx-4 text-2xl font-semibold text-gray-300 bg-gray-800 px-4 py-4 rounded-lg shadow mt-4">
         Times up! <br></br>Now <span className="text-green-500 font-bold">{players[0].name}</span> can start the reveal.
       </p>
     );
@@ -519,20 +613,17 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
   const showMakeWords = () => {
     return (
       <div className='max-w-screen-sm bg-gray-800'>
-        <div className="deckContainer mb-4 mx-auto bg-gray-800">
-          <p className="flex justify-between items-center font-semibold text-gray-300 bg-gray-800 border-b border-gray-500 px-3 py-2">
-            <span className='text-lg'>Round {currentRound}</span>
-            <span className='text-2xl font-bold uppercase text-green-500'>{roundData.word}</span>
-          </p>
-          <div>
-            <OutOfWordsWords 
-              word={roundData.word} 
-              minWordLength={minWordLength} 
-              foundWords={foundWords} 
-              setFoundWords={setFoundWords}
-              duration={duration} />
-          </div>
+        {/* Header with round and word */}
+        <div className="flex justify-between items-center font-semibold text-gray-300 border-b border-gray-600 px-3 py-2">
+          <span className='text-lg'>Round {currentRound}</span>
+          <span className='text-2xl font-bold uppercase text-green-500'>{roundData.word}</span>
         </div>
+        <OutOfWordsWords
+          word={roundData.word}
+          minWordLength={minWordLength}
+          foundWords={foundWords}
+          setFoundWords={setFoundWords}
+          duration={duration} />
       </div>
     )
   }

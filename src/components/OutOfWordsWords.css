@@ -1,23 +1,10 @@
-.guess {
-  font-size: 30px;
-  font-weight: 600;
-  text-align: center;
-  margin-top: 10px;
+/* Shake animation for invalid words */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+  20%, 40%, 60%, 80% { transform: translateX(6px); }
 }
 
-@keyframes cursor-blink {
-  0% {
-    opacity: 0;
-  }
-}
-
-.guess::after {
-  content: "";
-  position: relative;
-  top: 6px;
-  width: 3px;
-  height: 35px;
-  background: #f6e05e;
-  display: inline-block;
-  animation: cursor-blink 1s steps(2) infinite;
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
 }

@@ -14,17 +14,52 @@ function StartPage() {
     const storedPlayerName = localStorage.getItem('currentPlayerName');
     if (storedPlayerName) {
       setCurrentPlayerName(storedPlayerName);
+      setPlayerName(storedPlayerName);
     }
   }, [setCurrentPlayerName]);
 
   const [playerName, setPlayerName] = useState('');
   const [shortId, setShortId] = useState('');
-  const [gameType, setGameType] = useState('Incommon');
+  const [gameType, setGameType] = useState('Out of Words, Words');
+  const [recentGames, setRecentGames] = useState([]);
+  const [recentGamesFilter, setRecentGamesFilter] = useState('Out of Words, Words');
+  const [showModal, setShowModal] = useState(false);
+  const [selectedGame, setSelectedGame] = useState(null);
+  const [modalName, setModalName] = useState('');
   const navigate = useNavigate();
+
+  // Fetch recent games
+  const fetchRecentGames = async () => {
+    const gamesRef = collection(db, 'games');
+    const q = query(
+      gamesRef,
+      where('gameState', '==', 'setup')
+    );
+
+    const snapshot = await getDocs(q);
+    const games = snapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      .filter(game => game.gameType === recentGamesFilter)
+      .sort((a, b) => {
+        const aTime = a.createdAt?.toMillis?.() || 0;
+        const bTime = b.createdAt?.toMillis?.() || 0;
+        return bTime - aTime;
+      })
+      .slice(0, 3);
+    setRecentGames(games);
+  };
+
+  useEffect(() => {
+    fetchRecentGames();
+  }, [recentGamesFilter]);
 
   const newGameJson = {
     gameState: 'setup',
-    gameType: gameType
+    gameType: gameType,
+    createdAt: serverTimestamp()
   };
 
   const handleSetShortId = value => {
@@ -54,10 +89,15 @@ function StartPage() {
       return;
     }
 
-    setCurrentPlayerName(playerName);
+    await joinGameWithCode(shortId, playerName);
+  };
+
+  const joinGameWithCode = async (gameCode, name) => {
+    setCurrentPlayerName(name);
+    localStorage.setItem('currentPlayerName', name);
 
     const gamesRef = collection(db, 'games');
-    const q = query(gamesRef, where('shortId', '==', shortId));
+    const q = query(gamesRef, where('shortId', '==', gameCode));
 
     await getDocs(q).then((querySnapshot) => {
       if (querySnapshot.size === 1) {
@@ -67,7 +107,7 @@ function StartPage() {
 
         const playersRef = collection(gameRef, "players");
         addDoc(playersRef, {
-          name: playerName,
+          name: name,
           gameScore: 0,
           roundScore: 0,
           chosenCards: [],
@@ -75,7 +115,7 @@ function StartPage() {
           joinedAt: serverTimestamp()
         }).then(player => {
           setCurrentPlayerId(player.id);
-          navigate(`/player/${shortId}`);
+          navigate(`/player/${gameCode}`);
         }).catch((error) => {
           console.error(error);
         });
@@ -83,6 +123,20 @@ function StartPage() {
         alert('Invalid game ID.');
       }
     });
+  };
+
+  const handleQuickJoin = (game) => {
+    setSelectedGame(game);
+    setModalName(playerName || '');
+    setShowModal(true);
+  };
+
+  const handleModalJoin = async () => {
+    if (!modalName.trim()) {
+      return;
+    }
+    setShowModal(false);
+    await joinGameWithCode(selectedGame.shortId, modalName.trim());
   };
 
   return (
@@ -153,7 +207,104 @@ function StartPage() {
             Join Game
           </Button>
         </div>
+
+        {/* Recent Games */}
+        <div className='bg-gray-800 mx-4 p-4 mt-4 rounded-lg'>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xl text-gray-400">Recent Games</p>
+            <div className="flex items-center gap-2">
+              <select
+                value={recentGamesFilter}
+                onChange={(e) => setRecentGamesFilter(e.target.value)}
+                className="bg-gray-700 text-gray-200 text-base px-2 py-1 rounded border border-gray-600 focus:outline-none"
+              >
+                <option value="Out of Words, Words">Words</option>
+                <option value="Incommon">Incommon</option>
+              </select>
+              <button
+                onClick={fetchRecentGames}
+                className="p-1 text-gray-400 hover:text-white"
+                title="Refresh"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          {recentGames.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {recentGames.map((game) => {
+                const createdAt = game.createdAt?.toDate?.();
+                const timeStr = createdAt
+                  ? createdAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                  : '';
+
+                return (
+                  <div
+                    key={game.id}
+                    className="flex items-center justify-between bg-gray-900 rounded-lg px-4 py-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl font-bold text-yellow-400 tracking-wider">
+                        {game.shortId}
+                      </span>
+                      {timeStr && (
+                        <span className="text-base text-gray-500">
+                          {timeStr}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleQuickJoin(game)}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg text-lg"
+                    >
+                      Join
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-2">No games waiting</p>
+          )}
+        </div>
       </div>
+
+      {/* Name Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 mx-4 w-full max-w-sm">
+            <p className="text-xl text-gray-300 mb-4">
+              Join game <span className="font-bold text-yellow-400">{selectedGame?.shortId}</span>
+            </p>
+            <input
+              type="text"
+              placeholder="Enter your name"
+              value={modalName}
+              onChange={(e) => setModalName(e.target.value.slice(0, 11))}
+              onKeyDown={(e) => e.key === 'Enter' && handleModalJoin()}
+              autoFocus
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-xl text-white mb-4 focus:outline-none focus:border-green-500"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold rounded-lg text-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleModalJoin}
+                disabled={!modalName.trim()}
+                className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 text-white font-semibold rounded-lg text-lg"
+              >
+                Join
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

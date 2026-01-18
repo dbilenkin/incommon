@@ -33,36 +33,69 @@ def parse_lemma_file(input_file):
     return all_words
 
 def is_regular_inflection(word, all_words):
-    """Check if word is a regular inflection of another word in the set."""
-    # -s plural / 3rd person
-    if word.endswith('s') and word[:-1] in all_words:
+    """Check if word is a regular inflection of another word in the set.
+
+    Uses minimum base length requirements to avoid false positives like:
+    - "ring" being filtered as inflection of "re" (ring -> r + ing + e)
+    - "need" being filtered as inflection of "nee" (need -> nee + d)
+    - "wing" being filtered as inflection of "we" (wing -> w + ing + e)
+    """
+
+    # -s plural / 3rd person (cats -> cat)
+    # Min base length 2 to avoid issues with very short words
+    base = word[:-1]
+    if word.endswith('s') and len(base) >= 2 and base in all_words:
         return True
-    # -es plural / 3rd person
-    if word.endswith('es') and word[:-2] in all_words:
+
+    # -es plural / 3rd person (boxes -> box)
+    base = word[:-2]
+    if word.endswith('es') and len(base) >= 2 and base in all_words:
         return True
-    # -ies (e.g., "carries" from "carry")
-    if word.endswith('ies') and word[:-3] + 'y' in all_words:
+
+    # -ies (carries -> carry)
+    base = word[:-3] + 'y'
+    if word.endswith('ies') and len(base) >= 3 and base in all_words:
         return True
-    # -ed past tense (walked)
-    if word.endswith('ed') and word[:-2] in all_words:
+
+    # -ed past tense (walked -> walk)
+    # Min base length 3 to avoid "wed" -> "w" type issues
+    base = word[:-2]
+    if word.endswith('ed') and len(base) >= 3 and base in all_words:
         return True
-    # -ed past tense (timed -> time)
-    if word.endswith('ed') and word[:-1] in all_words:
+
+    # -ed past tense where base ends in 'e' (timed -> time)
+    # Min base length 4 to avoid "need" -> "nee", "feed" -> "fee", "reed" -> "ree"
+    base = word[:-1]
+    if word.endswith('ed') and len(base) >= 4 and base in all_words:
         return True
-    # -ied (e.g., "carried" from "carry")
-    if word.endswith('ied') and word[:-3] + 'y' in all_words:
+
+    # -ied (carried -> carry)
+    base = word[:-3] + 'y'
+    if word.endswith('ied') and len(base) >= 3 and base in all_words:
         return True
-    # -ing (walking)
-    if word.endswith('ing') and word[:-3] in all_words:
+
+    # -ing (walking -> walk)
+    # Min base length 3 to avoid short word issues
+    base = word[:-3]
+    if word.endswith('ing') and len(base) >= 3 and base in all_words:
         return True
-    # -ing (biting -> bite)
-    if word.endswith('ing') and word[:-3] + 'e' in all_words:
+
+    # -ing where base ends in 'e' (biting -> bite)
+    # Min base length 4 to avoid "ring" -> "re", "sing" -> "se", "wing" -> "we"
+    base = word[:-3] + 'e'
+    if word.endswith('ing') and len(base) >= 4 and base in all_words:
         return True
-    # -er comparative (faster)
-    if word.endswith('er') and word[:-2] in all_words:
+
+    # -er comparative (faster -> fast)
+    # Min base length 3 to avoid short word issues
+    base = word[:-2]
+    if word.endswith('er') and len(base) >= 3 and base in all_words:
         return True
-    # -est superlative (fastest)
-    if word.endswith('est') and word[:-3] in all_words:
+
+    # -est superlative (fastest -> fast)
+    # Min base length 3
+    base = word[:-3]
+    if word.endswith('est') and len(base) >= 3 and base in all_words:
         return True
 
     return False

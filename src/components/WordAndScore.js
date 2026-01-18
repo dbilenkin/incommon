@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 
-function WordAndScore({ word, points, highlight, allPlayersHaveWord, isRevealed, isCrossedOut }) {
+function WordAndScore({ word, points, highlight, allPlayersHaveWord, isRevealed, isCrossedOut, blurUnrevealed = false }) {
   const [showEmoji, setShowEmoji] = useState(false);
   const wordLength = word?.length || 0;
 
@@ -88,7 +88,7 @@ function WordAndScore({ word, points, highlight, allPlayersHaveWord, isRevealed,
   return (
     <div className="relative">
       <animated.div
-        className={`text-center ${isCrossedOut ? 'line-through text-gray-500' : 'text-white'}`}
+        className={`text-center ${blurUnrevealed && !isRevealed ? 'blur-sm' : ''} ${isCrossedOut ? 'line-through text-gray-500' : 'text-white'}`}
         style={wordStyle}
       >
         {word}{getPointsDisplay()}

@@ -122,7 +122,8 @@ const HostWordsRoundPage = ({ gameData, gameRef, players }) => {
                       points={points}
                       highlight={isCurrentWord}
                       isRevealed={isRevealed}
-                      isCrossedOut={isCrossedOut} />
+                      isCrossedOut={isCrossedOut}
+                      blurUnrevealed={true} />
                   );
                 })}
               </div>

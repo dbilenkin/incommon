@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './OutOfWordsWords.css';
 import TimerBar from './TimerBar';
 
@@ -11,6 +11,29 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
   const [error, setError] = useState(null);
   // Track display order of letters (array of original indices)
   const [letterOrder, setLetterOrder] = useState(() => letters.map((_, i) => i));
+
+  // Toast and shake state
+  const [toast, setToast] = useState({ show: false, message: '' });
+  const [isShaking, setIsShaking] = useState(false);
+  const toastTimeoutRef = useRef(null);
+
+  const showToast = (message) => {
+    // Clear any existing timeout
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+
+    setToast({ show: true, message });
+    setIsShaking(true);
+
+    // Remove shake after animation
+    setTimeout(() => setIsShaking(false), 500);
+
+    // Hide toast after delay
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast({ show: false, message: '' });
+    }, 2000);
+  };
 
   // Shuffle the letter display order
   const handleScramble = () => {
@@ -57,15 +80,15 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
 
   const handleSubmitClick = () => {
     if (currentWord.length < minWordLength) {
-      alert("too short");
+      showToast("Too short!");
     } else if (currentWord.toLowerCase() === word.toLowerCase()) {
-      alert("Can't use the original word!");
+      showToast("Can't use the original word!");
     } else if (foundWords.includes(currentWord)) {
-      alert("already found!");
+      showToast("Already found!");
     } else if (wordList.includes(currentWord.toLowerCase())) {
       setFoundWords([...foundWords, currentWord]);
     } else {
-      alert(`Word "${currentWord}" is not valid!`);
+      showToast("Not a valid word!");
     }
     setSelectedLetters([]);
     setCurrentWord('');
@@ -84,61 +107,84 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
   }
 
   return (
-    <>
-      <div className='px-2 py-4'>
+    <div className="out-of-words-words bg-gray-800 text-gray-300">
+      {/* Timer */}
+      <div className='px-3 py-2'>
         <TimerBar duration={duration} />
       </div>
-      <div className="out-of-words-words px-4 bg-gray-800 rounded-lg text-gray-300">
-        <div className="controls-container flex items-center justify-between gap-4">
+
+      {/* Current word input area with toast */}
+      <div className="relative px-3 py-2">
+        {/* Toast notification */}
+        <div className={`absolute -top-1 left-1/2 -translate-x-1/2 z-10 transition-all duration-300 ${toast.show ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
+          <div className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg text-lg font-semibold whitespace-nowrap">
+            {toast.message}
+          </div>
+        </div>
+
+        {/* Word display with shake */}
+        <div className={`flex items-center justify-center h-12 bg-gray-900 rounded-lg mb-2 ${isShaking ? 'animate-shake' : ''}`}>
+          <span className="text-3xl font-bold text-white tracking-wider">
+            {currentWord || <span className="text-gray-600">tap letters</span>}
+          </span>
+        </div>
+
+        {/* Delete and Enter buttons */}
+        <div className="flex gap-2 mb-2">
           <button
             onClick={handleBackspaceClick}
-            className="backspace-button px-4 py-3 bg-red-500 text-white rounded shadow text-xl"
+            className="flex-1 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg shadow text-lg font-semibold"
           >
             Delete
           </button>
-          <div className="current-word-container mb-4 text-3xl">
-            <span className="guess font-bold">{currentWord}</span>
-          </div>
           <button
             onClick={handleSubmitClick}
-            className="submit-button px-4 py-3 bg-green-500 text-white rounded shadow text-xl"
+            className="flex-1 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg shadow text-lg font-semibold"
           >
             Enter
           </button>
         </div>
-        <div className="letters-container flex flex-wrap justify-center mb-4">
-          {letterOrder.map((originalIndex) => (
-            <button
-              key={originalIndex}
-              onClick={() => handleLetterClick(letters[originalIndex], originalIndex)}
-              disabled={isLetterSelected(originalIndex)}
-              className={`letter-button w-14 h-14 m-1 rounded shadow text-3xl font-bold ${isLetterSelected(originalIndex) ? 'bg-gray-500 text-gray-300' : 'bg-blue-500 text-white'}`}
-            >
-              {letters[originalIndex].toUpperCase()}
-            </button>
+      </div>
+
+      {/* Letter buttons */}
+      <div className="letters-container flex flex-wrap justify-center px-2 pb-1">
+        {letterOrder.map((originalIndex) => (
+          <button
+            key={originalIndex}
+            onClick={() => handleLetterClick(letters[originalIndex], originalIndex)}
+            disabled={isLetterSelected(originalIndex)}
+            className={`letter-button w-14 h-14 m-1 rounded shadow text-3xl font-bold ${isLetterSelected(originalIndex) ? 'bg-gray-600 text-gray-400' : 'bg-blue-500 text-white'}`}
+          >
+            {letters[originalIndex].toUpperCase()}
+          </button>
+        ))}
+      </div>
+
+      {/* Scramble button */}
+      <div className="flex justify-center py-2">
+        <button
+          onClick={handleScramble}
+          className="px-6 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded shadow text-base"
+        >
+          Scramble
+        </button>
+      </div>
+
+      {/* Found words */}
+      <div className="found-words-container bg-gray-900 mx-2 mb-2 p-3 rounded-lg">
+        <div className="flex items-center justify-between border-b border-gray-700 pb-1 mb-2">
+          <span className="text-lg text-gray-400">Found</span>
+          <span className="text-lg font-bold text-green-400">{foundWords.length}</span>
+        </div>
+        <div className="grid grid-cols-3 gap-1">
+          {foundWords.length > 0 && foundWords.map((foundWord, index) => (
+            <div key={index} className="text-white text-lg">
+              {foundWord}
+            </div>
           ))}
         </div>
-        <div className="flex justify-center mb-4">
-          <button
-            onClick={handleScramble}
-            className="px-4 py-2 bg-gray-600 text-white rounded shadow text-lg"
-          >
-            Scramble
-          </button>
-        </div>
-        <div className="found-words-container mt-6 bg-gray-900 p-4 rounded-lg">
-          <h3 className="text-2xl font-bold mb-4">Found Words:</h3>
-          <div className="grid grid-cols-3 gap-2">
-            {foundWords.length > 0 && foundWords.map((foundWord, index) => (
-              <div key={index} className="text-white text-xl">
-                {foundWord}
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
-    </>
-
+    </div>
   );
 };
 
