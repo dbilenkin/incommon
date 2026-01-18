@@ -9,6 +9,7 @@ import PlayerWordsRoundPage from './PlayerWordsRoundPage';
 import PlayerSetupPage from './PlayerSetupPage';
 import PlayerBuildDeckPage from './PlayerBuildDeckPage';
 import PlayerEndPage from './PlayerEndPage';
+import PlayerWordsEndPage from './PlayerWordsEndPage';
 import PlayerRejoinPage from './PlayerRejoinPage';
 import Nav from '../../components/Nav';
 import { getDeck } from '../../utils';
@@ -113,6 +114,9 @@ const PlayerGamePage = () => {
       }
     }
     if (gameState === "ended") {
+      if (gameType === 'Out of Words, Words') {
+        return <PlayerWordsEndPage gameData={gameData} gameRef={gameRef} players={players} />
+      }
       return <PlayerEndPage deck={getDeck(indexDeck, deckType)} gameData={gameData} gameRef={gameRef} players={players} />
     }
     return <div>Something went wrong</div>

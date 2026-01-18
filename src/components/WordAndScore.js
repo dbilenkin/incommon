@@ -8,13 +8,13 @@ function WordAndScore({ word, points, highlight, allPlayersHaveWord, isRevealed,
   // Get animation config based on word length (only 5+ get special animations)
   const getAnimationConfig = () => {
     if (wordLength >= 7) {
-      return { scale: 1.8, duration: 2000, emoji: '🔥', text: 'INCREDIBLE!!!', textClass: 'text-3xl text-yellow-400 font-black italic animate-pulse', hasEmoji: true };
+      return { scale: 1.8, duration: 1000, emoji: '🔥', text: 'INCREDIBLE!!!', textClass: 'text-3xl text-yellow-400 font-black italic animate-pulse', hasEmoji: true };
     } else if (wordLength === 6) {
-      return { scale: 1.6, duration: 1500, emoji: '⭐', text: 'Amazing!', textClass: 'text-2xl text-yellow-300 font-bold italic', hasEmoji: true };
+      return { scale: 1.6, duration: 800, emoji: '⭐', text: 'Amazing!', textClass: 'text-2xl text-yellow-300 font-bold italic', hasEmoji: true };
     } else if (wordLength === 5) {
-      return { scale: 1.4, duration: 1000, emoji: '✨', text: 'nice', textClass: 'text-xl text-blue-300 font-semibold', hasEmoji: true };
+      return { scale: 1.4, duration: 600, emoji: '✨', text: 'nice', textClass: 'text-xl text-blue-300 font-semibold', hasEmoji: true };
     } else {
-      return { scale: 1.2, duration: 800, emoji: '', text: '', textClass: '', hasEmoji: false };
+      return { scale: 1.2, duration: 500, emoji: '', text: '', textClass: '', hasEmoji: false };
     }
   };
 

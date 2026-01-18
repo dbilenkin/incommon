@@ -32,11 +32,19 @@ const HostSetupPage = ({ gameData, players }) => {
     } else if (gameType === 'Out of Words, Words') {
       return (
         <div className='mt-2 p-6 bg-gray-800 rounded-lg text-2xl'>
-          <label htmlFor="minWordLength" className="block">
+          <label className="block border-b pb-2 border-gray-600">
+            Mode: <span className='font-bold'>{gameData.untimed ? 'Untimed' : 'Timed'}</span>
+          </label>
+          {!gameData.untimed && (
+            <label className="block border-b py-2 border-gray-600">
+              Game Time (Minutes): <span className='font-bold'>{gameData.gameTime}</span>
+            </label>
+          )}
+          <label className="block border-b py-2 border-gray-600">
             Minimum Word Length: <span className='font-bold'>{gameData.minWordLength}</span>
           </label>
-          <label htmlFor="minWordLength" className="block">
-            Game Time (Minutes): <span className='font-bold'>{gameData.gameTime}</span>
+          <label className="block pt-2">
+            Number of Rounds: <span className='font-bold'>{gameData.numRounds}</span>
           </label>
         </div>
       );

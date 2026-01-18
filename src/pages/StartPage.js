@@ -26,6 +26,9 @@ function StartPage() {
   const [showModal, setShowModal] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [modalName, setModalName] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createdGame, setCreatedGame] = useState(null);
+  const [createModalName, setCreateModalName] = useState('');
   const navigate = useNavigate();
 
   // Fetch recent games
@@ -74,13 +77,31 @@ function StartPage() {
     const gameRef = await addDoc(collection(db, 'games'), newGameJson);
     setGameRef(gameRef);
     const gameId = gameRef.id;
-    const shortId = generateShortId(gameId);
+    const newShortId = generateShortId(gameId);
 
     await updateDoc(gameRef, {
-      shortId: shortId
+      shortId: newShortId
     });
 
-    navigate(`/host/${shortId}`);
+    // For Words game, show modal with join/host options
+    if (gameType === 'Out of Words, Words') {
+      setCreatedGame({ shortId: newShortId, ref: gameRef });
+      setCreateModalName(playerName || '');
+      setShowCreateModal(true);
+    } else {
+      navigate(`/host/${newShortId}`);
+    }
+  };
+
+  const handleCreateModalJoin = async () => {
+    if (!createModalName.trim()) return;
+    setShowCreateModal(false);
+    await joinGameWithCode(createdGame.shortId, createModalName.trim());
+  };
+
+  const handleCreateModalHost = () => {
+    setShowCreateModal(false);
+    navigate(`/host/${createdGame.shortId}`);
   };
 
   const handleJoinGame = async () => {
@@ -271,7 +292,7 @@ function StartPage() {
         </div>
       </div>
 
-      {/* Name Modal */}
+      {/* Name Modal for Recent Games */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-gray-800 rounded-lg p-6 mx-4 w-full max-w-sm">
@@ -302,6 +323,41 @@ function StartPage() {
                 Join
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Game Modal for Words */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 mx-4 w-full max-w-sm">
+            <p className="text-xl text-gray-300 mb-2">Game Created!</p>
+            <p className="text-3xl font-bold text-yellow-400 mb-4">{createdGame?.shortId}</p>
+
+            <input
+              type="text"
+              placeholder="Enter your name"
+              value={createModalName}
+              onChange={(e) => setCreateModalName(e.target.value.slice(0, 11))}
+              onKeyDown={(e) => e.key === 'Enter' && handleCreateModalJoin()}
+              autoFocus
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-xl text-white mb-4 focus:outline-none focus:border-green-500"
+            />
+
+            <button
+              onClick={handleCreateModalJoin}
+              disabled={!createModalName.trim()}
+              className="w-full py-3 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 text-white font-semibold rounded-lg text-lg mb-3"
+            >
+              Join Game
+            </button>
+
+            <button
+              onClick={handleCreateModalHost}
+              className="w-full py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold rounded-lg text-base"
+            >
+              Open Host Page
+            </button>
           </div>
         </div>
       )}

@@ -16,6 +16,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
   const [minWordLength, setMinWordLength] = useState(gameData.minWordLength || 4);
   const [gameTime, setGameTime] = useState(gameData.gameTime || 2);
   const [numRounds, setNumRounds] = useState(gameData.numRounds || players.length);
+  const [untimed, setUntimed] = useState(gameData.untimed || false);
   const [showRemovePlayerModal, setShowRemovePlayerModal] = useState(false);
   const [removePlayerName, setRemovePlayerName] = useState('');
 
@@ -38,13 +39,14 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
         await updateDoc(gameRef, {
           minWordLength: parseInt(minWordLength),
           gameTime: parseInt(gameTime),
-          numRounds: parseInt(numRounds)
+          numRounds: parseInt(numRounds),
+          untimed: untimed
         });
       }
     }
 
     updateGame();
-  }, [selectedGameLength, selectedDeck, selectedWordSelection, minWordLength, gameTime, numRounds]);
+  }, [selectedGameLength, selectedDeck, selectedWordSelection, minWordLength, gameTime, numRounds, untimed]);
 
   const handleWordSelectionChange = (event) => {
     setSelectedWordSelection(event.target.value);
@@ -240,7 +242,32 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
     } else if (gameData.gameType === 'Out of Words, Words') {
       return (
         <>
+          {/* Untimed checkbox */}
           {firstPlayer ? (
+            <div className="flex items-center justify-between py-4 border-b-2 border-gray-700">
+              <label htmlFor="untimed" className="block font-bold">
+                Untimed Mode
+              </label>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="untimed"
+                  checked={untimed}
+                  onChange={(e) => setUntimed(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+              </label>
+            </div>
+          ) : (
+            <div className=''>
+              <label className="block py-2 font-normal border-b-2 border-gray-700">
+                Untimed Mode: <span className='font-bold'>{gameData.untimed ? 'Yes' : 'No'}</span>
+              </label>
+            </div>
+          )}
+          {/* Game Time - only show if not untimed */}
+          {!untimed && (firstPlayer ? (
             <div className="flex items-center py-4 border-b-2 border-gray-700">
               <label htmlFor="gameTime" className="block font-bold w-5/12">
                 Game Time (Minutes)
@@ -263,7 +290,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
                 Game Time (Minutes): <span className='font-bold'>{gameData.gameTime}</span>
               </label>
             </div>
-          )}
+          ))}
           {firstPlayer ? (
             <div className="flex items-center py-4 border-b-2 border-gray-700">
               <label htmlFor="minWordLength" className="block font-bold w-5/12">

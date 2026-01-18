@@ -7,7 +7,7 @@ import OutOfWordsWords from '../../components/OutOfWordsWords';
 import WordAndScore from '../../components/WordAndScore';
 
 const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
-  const { currentRound, minWordLength, gameTime, numRounds } = gameData;
+  const { currentRound, minWordLength, gameTime, numRounds, untimed } = gameData;
   const currentPlayerIndex = currentRound % players.length;
 
   const { currentPlayerName, currentPlayerId } = useContext(CurrentGameContext);
@@ -85,45 +85,77 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
         onSnapshot(_roundRef, (docSnap) => {
           setRoundRef(_roundRef);
           const data = docSnap.data();
+
+          // Document was deleted (e.g., Play Again) - don't process
+          if (!data) return;
+
           setRoundData(data);
 
-          // Restore reveal state on refresh (only once)
-          if (data.wordsRevealed && !hasInitializedFromFirebase.current) {
-            hasInitializedFromFirebase.current = true;
+          // Restore state on refresh (only once)
+          if (!hasInitializedFromFirebase.current) {
+            // Handle refresh during reveal phase
+            if (data.wordsRevealed) {
+              hasInitializedFromFirebase.current = true;
 
-            // CRITICAL: Restore foundWords FIRST, before setting timesUp
-            // (because timesUp triggers a useEffect that writes foundWords to Firebase)
-            const currentPlayer = players.find(p => p.name === currentPlayerName);
-            if (currentPlayer?.foundWords) {
-              setFoundWords(currentPlayer.foundWords);
-            }
+              // CRITICAL: Restore foundWords FIRST, before setting timesUp
+              // (because timesUp triggers a useEffect that writes foundWords to Firebase)
+              const currentPlayer = players.find(p => p.name === currentPlayerName);
+              if (currentPlayer?.foundWords) {
+                setFoundWords(currentPlayer.foundWords);
+              }
 
-            setTimesUp(true);
-            setWordsRevealed(true);
+              setTimesUp(true);
+              setWordsRevealed(true);
 
-            // Restore reveal progress from Firebase
-            if (data.globallyRevealedWords) {
-              setGloballyRevealedWords(data.globallyRevealedWords);
-            }
-            if (data.playerScores) {
-              setPlayerScores(data.playerScores);
-            }
-            if (data.revealState) {
-              setRevealPlayerIndex(data.revealState.currentPlayerIndex || 0);
-              // +1 to move to next word after the last revealed one
-              setRevealWordIndex((data.revealState.currentWordIndex || 0) + 1);
-            }
+              // Restore reveal progress from Firebase
+              if (data.globallyRevealedWords) {
+                setGloballyRevealedWords(data.globallyRevealedWords);
+              }
+              if (data.playerScores) {
+                setPlayerScores(data.playerScores);
+              }
+              if (data.revealState) {
+                setRevealPlayerIndex(data.revealState.currentPlayerIndex || 0);
+                // +1 to move to next word after the last revealed one
+                setRevealWordIndex((data.revealState.currentWordIndex || 0) + 1);
+              }
 
-            // Restore player order (needed for first player to continue reveal)
-            const sortedPlayers = [...players].sort(
-              (a, b) => (b.foundWords?.length || 0) - (a.foundWords?.length || 0)
-            );
-            setPlayerOrder(sortedPlayers);
+              // Restore player order (needed for first player to continue reveal)
+              const sortedPlayers = [...players].sort(
+                (a, b) => (b.foundWords?.length || 0) - (a.foundWords?.length || 0)
+              );
+              setPlayerOrder(sortedPlayers);
+            }
+            // Handle refresh in untimed mode when round ended but reveal not started
+            // Only restore if Firebase actually has words (meaning it's a refresh, not normal gameplay)
+            else if (untimed && data.roundEnded) {
+              hasInitializedFromFirebase.current = true;
+              const currentPlayer = players.find(p => p.name === currentPlayerName);
+              // Only restore if there are actually words to restore (page refresh scenario)
+              // In normal gameplay, players subcollection was reset so foundWords is empty
+              if (currentPlayer?.foundWords?.length > 0) {
+                setFoundWords(currentPlayer.foundWords);
+              }
+              setTimesUp(true);
+            }
           }
 
-          // Start timer when word is chosen (independent of initialization flag)
-          if (data.word && !timer && !data.wordsRevealed) {
+          // Start timer when word is chosen (only in timed mode)
+          if (data.word && !timer && !data.wordsRevealed && !untimed) {
+            // Mark as initialized once the game is in progress
+            // This prevents restore logic from overwriting local state during normal gameplay
+            hasInitializedFromFirebase.current = true;
             timer = setTimeout(() => setTimesUp(true), duration * 1000);
+          }
+
+          // In untimed mode, mark as initialized when word is chosen (game in progress)
+          if (untimed && data.word && !data.wordsRevealed && !data.roundEnded) {
+            hasInitializedFromFirebase.current = true;
+          }
+
+          // In untimed mode, listen for roundEnded from first player
+          if (untimed && data.roundEnded) {
+            setTimesUp(true);
           }
         });
       } else {
@@ -205,8 +237,18 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     hasInitializedFromFirebase.current = true;
     setWordsRevealed(true);
 
+    // Build player list with up-to-date foundWords
+    // For current player, use local state (always up-to-date)
+    // For other players, use Firebase data (players prop)
+    const playersWithWords = players.map(p => {
+      if (p.name === currentPlayerName) {
+        return { ...p, foundWords: foundWords };
+      }
+      return p;
+    });
+
     // Sort players by word count (most first) and fix this order
-    const sortedPlayers = [...players].sort(
+    const sortedPlayers = [...playersWithWords].sort(
       (a, b) => (b.foundWords?.length || 0) - (a.foundWords?.length || 0)
     );
     setPlayerOrder(sortedPlayers);
@@ -294,6 +336,16 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
           currentWord: ''
         }
       });
+
+      // Also update the players subcollection with final gameScores
+      // (needed for end game stats)
+      const playersRef = collection(gameRef, 'players');
+      const updatePromises = updatedPlayers.map(p => {
+        const playerDocRef = doc(playersRef, p.id);
+        return updateDoc(playerDocRef, { gameScore: p.gameScore });
+      });
+      await Promise.all(updatePromises);
+
       return;
     }
 
@@ -340,7 +392,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     setTimeout(() => {
       setRevealWordIndex(foundWordIndex + 1);
       setIsAnimating(false);
-    }, 2000);
+    }, 1000);
   }
 
   const startNextRound = async () => {
@@ -357,11 +409,25 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
           gameState: "ended"
         });
       } else {
+        // Reset foundWords for all players in Firebase before starting next round
+        const playersRef = collection(gameRef, 'players');
+        const playersSnapshot = await getDocs(playersRef);
+        const resetPromises = playersSnapshot.docs.map(playerDoc =>
+          updateDoc(playerDoc.ref, { foundWords: [] })
+        );
+        await Promise.all(resetPromises);
+
+        // Create next round with clean player data (no foundWords)
+        const cleanPlayers = updatedPlayers.map(p => ({
+          ...p,
+          foundWords: []
+        }));
+
         const roundsRef = collection(gameRef, "rounds")
         await addDoc(roundsRef, {
           roundNumber: currentRound + 1,
           word: '',
-          players: updatedPlayers,
+          players: cleanPlayers,
         });
 
         await updateDoc(gameRef, {
@@ -398,14 +464,18 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     const myScores = firstPlayer ? playerScores : (roundData.playerScores || {});
     const myScore = myScores[currentPlayerId] || 0;
 
-    // Get current player's found words
-    const currentPlayer = players.find(p => p.name === currentPlayerName);
-    const myWords = currentPlayer?.foundWords || [];
+    // Get current player's found words - use local state which is always up-to-date
+    // (players prop may not have updated from Firebase yet)
+    const myWords = foundWords;
 
     // For non-first players, reconstruct player order from players prop
+    // but use local foundWords for current player
+    const playersWithMyWords = players.map(p =>
+      p.name === currentPlayerName ? { ...p, foundWords: foundWords } : p
+    );
     const displayPlayerOrder = playerOrder.length > 0
       ? playerOrder
-      : [...players].sort((a, b) => (b.foundWords?.length || 0) - (a.foundWords?.length || 0));
+      : [...playersWithMyWords].sort((a, b) => (b.foundWords?.length || 0) - (a.foundWords?.length || 0));
 
     // Get current reveal player index from Firebase for non-first players
     const currentRevealIdx = firstPlayer ? revealPlayerIndex : (revealState.currentPlayerIndex || 0);
@@ -444,8 +514,8 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
         {!roundData.revealComplete && (
           <div className="bg-gray-800 border border-green-500 rounded-lg mb-2 p-3">
             {/* Top row: whose words + Next button */}
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-lg text-gray-400">{currentRevealPlayer?.name}'s Words</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xl text-gray-200 font-semibold">{currentRevealPlayer?.name}'s Words</p>
               {firstPlayer && (
                 <button
                   onClick={handleNextReveal}
@@ -457,8 +527,11 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
               )}
             </div>
 
-            {/* Word and score display */}
-            <div className="flex items-center justify-center gap-3 my-2">
+            {/* Word, score, and celebration - all on one line */}
+            <div className="flex items-center justify-center gap-2 my-3 min-h-[48px]">
+              {celebration.emoji && currentWordInfo && (
+                <span className="text-2xl">{celebration.emoji}</span>
+              )}
               <span className="text-4xl font-bold text-green-400 uppercase">
                 {currentRevealWord || '—'}
               </span>
@@ -467,19 +540,14 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
                   {currentWordPoints > 0 ? `+${currentWordPoints}` : '(0)'}
                 </span>
               )}
+              {celebration.text && currentWordInfo && (
+                <span className={`text-lg ${celebration.textClass}`}>{celebration.text}</span>
+              )}
             </div>
-
-            {/* Celebration for 5+ letter words */}
-            {celebration.text && currentWordInfo && (
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <span className="text-2xl">{celebration.emoji}</span>
-                <span className={`text-xl ${celebration.textClass}`}>{celebration.text}</span>
-              </div>
-            )}
 
             {/* Players who had this word */}
             {currentWordInfo && playersWithCurrentWord.length > 0 && (
-              <div className="bg-gray-900 rounded-lg px-3 py-2 mt-2">
+              <div className="bg-gray-900 rounded-lg px-3 py-2">
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   {playersWithCurrentWord.map((name, idx) => (
                     <span key={idx} className="bg-gray-700 text-gray-200 px-2 py-1 rounded text-base">
@@ -605,10 +673,18 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     // Otherwise show waiting message
     return (
       <p className="mx-4 text-2xl font-semibold text-gray-300 bg-gray-800 px-4 py-4 rounded-lg shadow mt-4">
-        Times up! <br></br>Now <span className="text-green-500 font-bold">{players[0].name}</span> can start the reveal.
+        {untimed ? 'Round ended!' : 'Times up!'} <br></br>Now <span className="text-green-500 font-bold">{players[0].name}</span> can start the reveal.
       </p>
     );
   }
+
+  const handleEndRound = async () => {
+    // In untimed mode, notify all players via Firebase
+    if (roundRef) {
+      await updateDoc(roundRef, { roundEnded: true });
+    }
+    setTimesUp(true);
+  };
 
   const showMakeWords = () => {
     return (
@@ -623,7 +699,19 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
           minWordLength={minWordLength}
           foundWords={foundWords}
           setFoundWords={setFoundWords}
-          duration={duration} />
+          duration={duration}
+          untimed={untimed} />
+        {/* End Round button for first player in untimed mode */}
+        {untimed && firstPlayer && (
+          <div className="px-3 pb-3">
+            <button
+              onClick={handleEndRound}
+              className="w-full py-3 bg-yellow-600 hover:bg-yellow-500 text-white font-semibold rounded-lg text-lg"
+            >
+              End Round
+            </button>
+          </div>
+        )}
       </div>
     )
   }

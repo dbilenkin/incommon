@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './OutOfWordsWords.css';
 import TimerBar from './TimerBar';
 
-const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, duration }) => {
+const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, duration, untimed }) => {
   const letters = word.split('');
   const [selectedLetters, setSelectedLetters] = useState([]);
   const [currentWord, setCurrentWord] = useState('');
@@ -108,10 +108,12 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
 
   return (
     <div className="out-of-words-words bg-gray-800 text-gray-300">
-      {/* Timer */}
-      <div className='px-3 py-2'>
-        <TimerBar duration={duration} />
-      </div>
+      {/* Timer - only show in timed mode */}
+      {!untimed && (
+        <div className='px-3 py-2'>
+          <TimerBar duration={duration} />
+        </div>
+      )}
 
       {/* Current word input area with toast */}
       <div className="relative px-3 py-2">
@@ -146,19 +148,41 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
         </div>
       </div>
 
-      {/* Letter buttons */}
-      <div className="letters-container flex flex-wrap justify-center px-2 pb-1">
-        {letterOrder.map((originalIndex) => (
-          <button
-            key={originalIndex}
-            onClick={() => handleLetterClick(letters[originalIndex], originalIndex)}
-            disabled={isLetterSelected(originalIndex)}
-            className={`letter-button w-14 h-14 m-1 rounded shadow text-3xl font-bold ${isLetterSelected(originalIndex) ? 'bg-gray-600 text-gray-400' : 'bg-blue-500 text-white'}`}
-          >
-            {letters[originalIndex].toUpperCase()}
-          </button>
-        ))}
-      </div>
+      {/* Letter buttons - split into two rows */}
+      {(() => {
+        const topRowCount = Math.ceil(letterOrder.length / 2);
+        const topRow = letterOrder.slice(0, topRowCount);
+        const bottomRow = letterOrder.slice(topRowCount);
+
+        return (
+          <div className="letters-container px-2 pb-1">
+            <div className="flex justify-center">
+              {topRow.map((originalIndex) => (
+                <button
+                  key={originalIndex}
+                  onClick={() => handleLetterClick(letters[originalIndex], originalIndex)}
+                  disabled={isLetterSelected(originalIndex)}
+                  className={`letter-button w-14 h-14 m-1 rounded shadow text-3xl font-bold ${isLetterSelected(originalIndex) ? 'bg-gray-600 text-gray-400' : 'bg-blue-500 text-white'}`}
+                >
+                  {letters[originalIndex].toUpperCase()}
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-center">
+              {bottomRow.map((originalIndex) => (
+                <button
+                  key={originalIndex}
+                  onClick={() => handleLetterClick(letters[originalIndex], originalIndex)}
+                  disabled={isLetterSelected(originalIndex)}
+                  className={`letter-button w-14 h-14 m-1 rounded shadow text-3xl font-bold ${isLetterSelected(originalIndex) ? 'bg-gray-600 text-gray-400' : 'bg-blue-500 text-white'}`}
+                >
+                  {letters[originalIndex].toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Scramble button */}
       <div className="flex justify-center py-2">
