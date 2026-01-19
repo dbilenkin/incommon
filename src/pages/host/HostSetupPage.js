@@ -48,6 +48,17 @@ const HostSetupPage = ({ gameData, players }) => {
           </label>
         </div>
       );
+    } else if (gameType === 'Scattergories') {
+      return (
+        <div className='mt-2 p-6 bg-gray-800 rounded-lg text-2xl'>
+          <label className="block border-b pb-2 border-gray-600">
+            Round Time: <span className='font-bold'>{gameData.roundTime || 90} seconds</span>
+          </label>
+          <label className="block pt-2">
+            Number of Rounds: <span className='font-bold'>{gameData.numRounds || 3}</span>
+          </label>
+        </div>
+      );
     }
   };
 

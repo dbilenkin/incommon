@@ -1,5 +1,6 @@
 import names from './data/names.json';
 import words from './data/words.json';
+import { SCATTERGORIES_LETTERS, SCATTERGORIES_CATEGORIES } from './data/scattergories';
 import * as Constants from '../constants';
 
 const numWords = 5;
@@ -232,6 +233,54 @@ export function getContrastYIQ(hexcolor){
   var b = parseInt(hexcolor.substr(4,2),16);
   var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
   return (yiq >= 128) ? 'rgb(31,41,55)' : 'rgb(243, 244, 246)';
+}
+
+// Scattergories utility functions
+let usedScattergoriesLetters = [];
+let usedScattergoriesCategories = [];
+
+export function resetScattergoriesState() {
+  usedScattergoriesLetters = [];
+  usedScattergoriesCategories = [];
+}
+
+export function getRandomScattergoriesLetter() {
+  // Filter out already used letters
+  const availableLetters = SCATTERGORIES_LETTERS.filter(l => !usedScattergoriesLetters.includes(l));
+
+  // If all letters used, reset
+  if (availableLetters.length === 0) {
+    usedScattergoriesLetters = [];
+    return getRandomScattergoriesLetter();
+  }
+
+  const randomIndex = Math.floor(Math.random() * availableLetters.length);
+  const letter = availableLetters[randomIndex];
+  usedScattergoriesLetters.push(letter);
+  return letter;
+}
+
+export function getRandomScattergoriesCategories(count = 6) {
+  const categories = [];
+
+  // Filter out already used categories
+  let availableCategories = SCATTERGORIES_CATEGORIES.filter(c => !usedScattergoriesCategories.includes(c));
+
+  // If not enough available, reset
+  if (availableCategories.length < count) {
+    usedScattergoriesCategories = [];
+    availableCategories = [...SCATTERGORIES_CATEGORIES];
+  }
+
+  for (let i = 0; i < count; i++) {
+    const randomIndex = Math.floor(Math.random() * availableCategories.length);
+    const category = availableCategories[randomIndex];
+    categories.push(category);
+    usedScattergoriesCategories.push(category);
+    availableCategories.splice(randomIndex, 1);
+  }
+
+  return categories;
 }
 
 // export const Constants.playerColors = ["#6f1926", "#de324c", "#f4895f", "#f8e16f", "#95cf92", "#369acc", "#9656a2", "#cbabd1"];

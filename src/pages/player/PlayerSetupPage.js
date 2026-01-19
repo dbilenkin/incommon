@@ -4,7 +4,7 @@ import { CurrentGameContext } from '../../contexts/CurrentGameContext';
 import Button from '../../components/Button';
 import { db } from '../../utils/Firebase';
 import Spinner from '../../components/Spinner';
-import { getIndexDeck, displayFormattedDeckType, displayGameLength, displayWordSelection, getContrastYIQ } from '../../utils';
+import { getIndexDeck, displayFormattedDeckType, displayGameLength, displayWordSelection, getContrastYIQ, getRandomScattergoriesLetter, getRandomScattergoriesCategories, resetScattergoriesState } from '../../utils';
 import { playerColors } from '../../constants';
 import MessageModal from '../../components/MessageModal';
 
@@ -17,6 +17,8 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
   const [gameTime, setGameTime] = useState(gameData.gameTime || 2);
   const [numRounds, setNumRounds] = useState(gameData.numRounds || players.length);
   const [untimed, setUntimed] = useState(gameData.untimed || false);
+  const [roundTime, setRoundTime] = useState(gameData.roundTime || 90);
+  const [scattergoriesNumRounds, setScattergoriesNumRounds] = useState(gameData.scattergoriesNumRounds || 3);
   const [showRemovePlayerModal, setShowRemovePlayerModal] = useState(false);
   const [removePlayerName, setRemovePlayerName] = useState('');
 
@@ -42,11 +44,16 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           numRounds: parseInt(numRounds),
           untimed: untimed
         });
+      } else if (gameData.gameType === 'Scattergories') {
+        await updateDoc(gameRef, {
+          roundTime: parseInt(roundTime),
+          numRounds: parseInt(scattergoriesNumRounds)
+        });
       }
     }
 
     updateGame();
-  }, [selectedGameLength, selectedDeck, selectedWordSelection, minWordLength, gameTime, numRounds, untimed]);
+  }, [selectedGameLength, selectedDeck, selectedWordSelection, minWordLength, gameTime, numRounds, untimed, roundTime, scattergoriesNumRounds]);
 
   const handleWordSelectionChange = (event) => {
     setSelectedWordSelection(event.target.value);
@@ -82,6 +89,11 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
   const handleStartGame = async () => {
 
     let gameStateObject = {};
+    let roundData = {
+      roundNumber: 1,
+      word: '',
+      players
+    };
 
     if (gameData.gameType === 'Incommon') {
 
@@ -103,14 +115,33 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
         currentRound: 1,
         gameState: 'started'
       }
+    } else if (gameData.gameType === 'Scattergories') {
+      resetScattergoriesState();
+      const letter = getRandomScattergoriesLetter();
+      const categories = getRandomScattergoriesCategories(6);
+
+      // Store categories at game level (same for all rounds)
+      gameStateObject = {
+        currentRound: 1,
+        gameState: 'started',
+        categories  // Store categories in game doc for reuse across rounds
+      };
+
+      roundData = {
+        roundNumber: 1,
+        letter,
+        categories,  // Also store in round for easy access
+        players,
+        answersRevealed: false,
+        revealState: { currentCategoryIndex: 0 },
+        revealedCategories: {},
+        playerScores: {},
+        revealComplete: false
+      };
     }
 
     const roundsRef = collection(gameRef, "rounds");
-    await addDoc(roundsRef, {
-      roundNumber: 1,
-      word: '',
-      players
-    });
+    await addDoc(roundsRef, roundData);
 
     await updateDoc(gameRef, gameStateObject);
   };
@@ -334,6 +365,57 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
             <div className=''>
               <label htmlFor="numRounds" className="block pt-2 font-normal">
                 Number of Rounds: <span className='font-bold'>{gameData.numRounds || players.length}</span>
+              </label>
+            </div>
+          )}
+        </>
+      );
+    } else if (gameData.gameType === 'Scattergories') {
+      return (
+        <>
+          {firstPlayer ? (
+            <div className="flex items-center pb-4 border-b-2 border-gray-700">
+              <label htmlFor="roundTime" className="block font-bold w-5/12">
+                Round Time (Seconds)
+              </label>
+              <select
+                id="roundTime"
+                value={roundTime}
+                onChange={(e) => setRoundTime(e.target.value)}
+                className="block appearance-none w-7/12 bg-gray-700 border border-gray-500 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-gray-600 focus:border-gray-500"
+              >
+                <option value="60">60</option>
+                <option value="90">90</option>
+                <option value="120">120</option>
+              </select>
+            </div>
+          ) : (
+            <div className=''>
+              <label className="block pb-2 font-normal border-b-2 border-gray-700">
+                Round Time (Seconds): <span className='font-bold'>{gameData.roundTime || 90}</span>
+              </label>
+            </div>
+          )}
+          {firstPlayer ? (
+            <div className="flex items-center pt-4">
+              <label htmlFor="scattergoriesNumRounds" className="block font-bold w-5/12">
+                Number of Rounds
+              </label>
+              <select
+                id="scattergoriesNumRounds"
+                value={scattergoriesNumRounds}
+                onChange={(e) => setScattergoriesNumRounds(e.target.value)}
+                className="block appearance-none w-7/12 bg-gray-700 border border-gray-500 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-gray-600 focus:border-gray-500"
+              >
+                {[...Array(10)].map((_, i) => (
+                  <option key={i + 1} value={i + 1}>{i + 1}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className=''>
+              <label className="block pt-2 font-normal">
+                Number of Rounds: <span className='font-bold'>{gameData.numRounds || 3}</span>
               </label>
             </div>
           )}

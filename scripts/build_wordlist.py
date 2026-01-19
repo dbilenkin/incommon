@@ -86,11 +86,9 @@ def is_regular_inflection(word, all_words):
     if word.endswith('ing') and len(base) >= 4 and base in all_words:
         return True
 
-    # -er comparative (faster -> fast)
-    # Min base length 3 to avoid short word issues
-    base = word[:-2]
-    if word.endswith('er') and len(base) >= 3 and base in all_words:
-        return True
+    # NOTE: -er words are NOT filtered because too many legitimate words
+    # would be excluded (player, meter, after, banker, teacher, etc.)
+    # Comparative adjectives (faster, taller) will remain but that's fine.
 
     # -est superlative (fastest -> fast)
     # Min base length 3

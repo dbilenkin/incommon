@@ -6,10 +6,12 @@ import { db } from '../../utils/Firebase';
 import { CurrentGameContext } from '../../contexts/CurrentGameContext';
 import PlayerRoundPage from './PlayerRoundPage';
 import PlayerWordsRoundPage from './PlayerWordsRoundPage';
+import PlayerScattergoriesRoundPage from './PlayerScattergoriesRoundPage';
 import PlayerSetupPage from './PlayerSetupPage';
 import PlayerBuildDeckPage from './PlayerBuildDeckPage';
 import PlayerEndPage from './PlayerEndPage';
 import PlayerWordsEndPage from './PlayerWordsEndPage';
+import PlayerScattergoriesEndPage from './PlayerScattergoriesEndPage';
 import PlayerRejoinPage from './PlayerRejoinPage';
 import Nav from '../../components/Nav';
 import { getDeck } from '../../utils';
@@ -111,11 +113,15 @@ const PlayerGamePage = () => {
         return <PlayerRoundPage deck={getDeck(indexDeck, deckType)} gameData={gameData} gameRef={gameRef} players={players} />
       } else if (gameType === 'Out of Words, Words') {
         return <PlayerWordsRoundPage gameData={gameData} gameRef={gameRef} players={players} />
+      } else if (gameType === 'Scattergories') {
+        return <PlayerScattergoriesRoundPage gameData={gameData} gameRef={gameRef} players={players} />
       }
     }
     if (gameState === "ended") {
       if (gameType === 'Out of Words, Words') {
         return <PlayerWordsEndPage gameData={gameData} gameRef={gameRef} players={players} />
+      } else if (gameType === 'Scattergories') {
+        return <PlayerScattergoriesEndPage gameData={gameData} gameRef={gameRef} players={players} />
       }
       return <PlayerEndPage deck={getDeck(indexDeck, deckType)} gameData={gameData} gameRef={gameRef} players={players} />
     }

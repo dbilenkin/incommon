@@ -460,8 +460,8 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
       const playersWithAwards = new Set();
       const usedAwardIds = new Set();
 
-      // Shuffle awards for randomness
-      const shuffled = [...allAwards].sort(() => Math.random() - 0.5);
+      // Use deterministic order based on award id (no random shuffle - causes different results per client)
+      const shuffled = [...allAwards].sort((a, b) => a.id.localeCompare(b.id));
 
       // First pass: ensure each player gets at least one award
       playerNames.forEach(playerName => {
@@ -503,8 +503,10 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
       .sort((a, b) => b.length - a.length)
       .slice(0, 5);
 
-    // Sort leaderboard by score
-    const sortedByScore = Object.values(playerStats).sort((a, b) => b.totalScore - a.totalScore);
+    // Sort leaderboard by score (with name tiebreaker for consistent ordering across clients)
+    const sortedByScore = Object.values(playerStats).sort((a, b) =>
+      b.totalScore - a.totalScore || a.name.localeCompare(b.name)
+    );
 
     setStats({
       playerStats,

@@ -6,6 +6,7 @@ import HostSetupPage from './HostSetupPage';
 import HostBuildDeckPage from './HostBuildDeckPage';
 import HostRoundPage from './HostRoundPage';
 import HostWordsRoundPage from './HostWordsRoundPage';
+import HostScattergoriesRoundPage from './HostScattergoriesRoundPage';
 import HostEndPage from './HostEndPage';
 import Spinner from '../../components/Spinner';
 import { getDeck } from '../../utils';
@@ -96,6 +97,8 @@ const HostGamePage = () => {
         return <HostRoundPage deck={getDeck(indexDeck, deckType)} gameData={gameData} gameRef={gameRef} players={players} />
       } else if (gameType === 'Out of Words, Words') {
         return <HostWordsRoundPage gameData={gameData} gameRef={gameRef} players={players} />
+      } else if (gameType === 'Scattergories') {
+        return <HostScattergoriesRoundPage gameData={gameData} gameRef={gameRef} players={players} />
       }
     }
     if (gameState === "ended") {

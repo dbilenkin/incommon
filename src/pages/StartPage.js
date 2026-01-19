@@ -83,8 +83,8 @@ function StartPage() {
       shortId: newShortId
     });
 
-    // For Words game, show modal with join/host options
-    if (gameType === 'Out of Words, Words') {
+    // For Words or Scattergories game, show modal with join/host options
+    if (gameType === 'Out of Words, Words' || gameType === 'Scattergories') {
       setCreatedGame({ shortId: newShortId, ref: gameRef });
       setCreateModalName(playerName || '');
       setShowCreateModal(true);
@@ -166,35 +166,24 @@ function StartPage() {
       <div className='max-w-screen-md mx-auto text-gray-100'>
         <div className="bg-gray-800 mx-4 p-4 mt-4 rounded-lg">
           <div className="mb-4">
-            <div className="text-gray-300 text-2xl font-bold mb-2">Select Game Type</div>
-            <div className="flex items-center justify-evenly">
-              <div className="flex items-center mr-4">
-                <input
-                  type="radio"
-                  id="incommon"
-                  name="gameType"
-                  value="Incommon"
-                  checked={gameType === 'Incommon'}
-                  onChange={(e) => setGameType(e.target.value)}
-                  className="mr-2"
-                />
-                <label htmlFor="incommon" className="text-gray-300 text-2xl">Incommon</label>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  id="outofwords"
-                  name="gameType"
-                  value="Out of Words, Words"
-                  checked={gameType === 'Out of Words, Words'}
-                  onChange={(e) => setGameType(e.target.value)}
-                  className="mr-2"
-                />
-                <label htmlFor="outofwords" className="text-gray-300 text-2xl">Out of Words, Words</label>
-              </div>
-            </div>
+            <label htmlFor="gameType" className="block text-gray-300 text-2xl font-bold mb-2">Select Game</label>
+            <select
+              id="gameType"
+              value={gameType}
+              onChange={(e) => setGameType(e.target.value)}
+              className="block w-full bg-gray-700 border border-gray-600 text-gray-200 text-xl py-3 px-4 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 appearance-none cursor-pointer"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239CA3AF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 0.75rem center',
+                backgroundSize: '1.5rem'
+              }}
+            >
+              <option value="Out of Words, Words">Out of Words, Words</option>
+              <option value="Scattergories">Scattergories</option>
+              <option value="Incommon">Incommon</option>
+            </select>
           </div>
-
 
           <Button onClick={handleCreateGame} buttonType="large" className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded">
             Create Game
@@ -240,6 +229,7 @@ function StartPage() {
                 className="bg-gray-700 text-gray-200 text-base px-2 py-1 rounded border border-gray-600 focus:outline-none"
               >
                 <option value="Out of Words, Words">Words</option>
+                <option value="Scattergories">Scattergories</option>
                 <option value="Incommon">Incommon</option>
               </select>
               <button
