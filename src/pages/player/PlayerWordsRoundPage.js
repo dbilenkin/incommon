@@ -358,10 +358,11 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     // Start animating
     setIsAnimating(true);
 
-    // Calculate points: wordLength * playersWithoutWord
+    // Calculate points: (wordLength - minWordLength + 1) * playersWithoutWord
+    // This incentivizes longer words more than the minimum length
     const playersWithWord = playerOrder.filter(p => p.foundWords?.includes(nextWord));
     const playersWithoutWordCount = playerOrder.length - playersWithWord.length;
-    const points = nextWord.length * playersWithoutWordCount;
+    const points = (nextWord.length - minWordLength + 1) * playersWithoutWordCount;
 
     // Update local state
     const newGloballyRevealedWords = {
