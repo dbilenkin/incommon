@@ -171,15 +171,20 @@ const PlayerScattergoriesRoundPage = ({ gameData, gameRef, players }) => {
       });
     });
 
-    // Initialize player scores
+    // Initialize player scores and capture starting game scores
     const playerScores = {};
-    freshPlayers.forEach(p => { playerScores[p.id] = 0; });
+    const startingGameScores = {};
+    freshPlayers.forEach(p => {
+      playerScores[p.id] = 0;
+      startingGameScores[p.id] = p.gameScore || 0;
+    });
 
     await updateDoc(roundRef, {
       answersRevealed: true,
       revealState: { currentCategoryIndex: 0 },
       allAnswers,
-      playerScores
+      playerScores,
+      startingGameScores
     });
   };
 
@@ -217,12 +222,13 @@ const PlayerScattergoriesRoundPage = ({ gameData, gameRef, players }) => {
         revealComplete: true
       });
 
-      // Update players subcollection with scores
+      // Update players subcollection with scores - fetch fresh data to avoid stale props
       const playersRef = collection(gameRef, 'players');
-      const updatePromises = players.map(p => {
-        const playerDocRef = doc(playersRef, p.id);
-        const newGameScore = (p.gameScore || 0) + (playerScores[p.id] || 0);
-        return updateDoc(playerDocRef, { gameScore: newGameScore });
+      const playersSnapshot = await getDocs(playersRef);
+      const updatePromises = playersSnapshot.docs.map(playerDoc => {
+        const playerData = playerDoc.data();
+        const newGameScore = (playerData.gameScore || 0) + (playerScores[playerDoc.id] || 0);
+        return updateDoc(playerDoc.ref, { gameScore: newGameScore });
       });
       await Promise.all(updatePromises);
     } else {
@@ -289,8 +295,8 @@ const PlayerScattergoriesRoundPage = ({ gameData, gameRef, players }) => {
 
     return (
       <div className="max-w-screen-sm mx-auto">
-        {/* Header with letter, round, and timer */}
-        <div className="bg-gray-800 p-4 mb-2">
+        {/* Header with letter, round, and timer - sticky so always visible */}
+        <div className="bg-gray-800 p-4 mb-2 sticky top-0 z-10">
           <div className="flex justify-between items-center mb-2">
             <span className="text-lg text-gray-400">Round {currentRound}</span>
             <span className={`text-2xl font-bold ${timeRemaining <= 10 ? 'text-red-500' : 'text-green-400'}`}>
@@ -468,7 +474,7 @@ const PlayerScattergoriesRoundPage = ({ gameData, gameRef, players }) => {
                 {[...players]
                   .map(player => ({
                     ...player,
-                    totalScore: (player.gameScore || 0) + (playerScores[player.id] || 0)
+                    totalScore: (roundData.startingGameScores?.[player.id] || 0) + (playerScores[player.id] || 0)
                   }))
                   .sort((a, b) => b.totalScore - a.totalScore)
                   .map((player, index) => {

@@ -224,7 +224,7 @@ const HostScattergoriesRoundPage = ({ gameData, gameRef, players }) => {
                 {[...players]
                   .map(player => ({
                     ...player,
-                    totalScore: (player.gameScore || 0) + (playerScores[player.id] || 0)
+                    totalScore: (roundData.startingGameScores?.[player.id] || 0) + (playerScores[player.id] || 0)
                   }))
                   .sort((a, b) => b.totalScore - a.totalScore)
                   .map((player, index) => {
