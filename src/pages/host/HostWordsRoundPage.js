@@ -4,9 +4,10 @@ import Nav from '../../components/Nav';
 import WordAndScore from '../../components/WordAndScore';
 
 const HostWordsRoundPage = ({ gameData, gameRef, players }) => {
-  const { currentRound, shortId } = gameData;
+  const { currentRound, shortId, minWordLength } = gameData;
   const currentPlayerIndex = currentRound % players.length;
   const chooserName = players[currentPlayerIndex].name;
+  const isSinglePlayer = players.length === 1;
 
   const [roundData, setRoundData] = useState(null);
   const [playerOrder, setPlayerOrder] = useState([]);
@@ -75,6 +76,16 @@ const HostWordsRoundPage = ({ gameData, gameRef, players }) => {
   ).filter(p => p != null);
 
   const getWordDisplayInfo = (word, playerName) => {
+    // Single player mode: show all words as revealed with their points when complete
+    if (isSinglePlayer && roundData.revealComplete) {
+      const points = word.length - (minWordLength || 4) + 1;
+      return {
+        isRevealed: true,
+        isCrossedOut: false,
+        points: points
+      };
+    }
+
     const scoreInfo = globallyRevealedWords[word];
     if (!scoreInfo) {
       return { isRevealed: false, isCrossedOut: false, points: 0 };
@@ -123,7 +134,7 @@ const HostWordsRoundPage = ({ gameData, gameRef, players }) => {
                       highlight={isCurrentWord}
                       isRevealed={isRevealed}
                       isCrossedOut={isCrossedOut}
-                      blurUnrevealed={true} />
+                      blurUnrevealed={!isSinglePlayer || !roundData.revealComplete} />
                   );
                 })}
               </div>

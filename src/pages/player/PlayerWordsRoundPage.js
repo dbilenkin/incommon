@@ -12,6 +12,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
 
   const { currentPlayerName, currentPlayerId } = useContext(CurrentGameContext);
   const firstPlayer = players[0].name === currentPlayerName;
+  const isSinglePlayer = players.length === 1;
 
   const [word, setWord] = useState('');
   const [roundData, setRoundData] = useState('');
@@ -33,6 +34,10 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
   // Missed words state
   const [validWordList, setValidWordList] = useState([]);
   const [missedWords, setMissedWords] = useState([]);
+
+  // Single player mode state
+  const [singlePlayerScore, setSinglePlayerScore] = useState(0);
+  const [singlePlayerComplete, setSinglePlayerComplete] = useState(false);
 
   // Ref to track if we've initialized from Firebase (for refresh recovery)
   const hasInitializedFromFirebase = useRef(false);
@@ -74,6 +79,10 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     setGloballyRevealedWords({});
     setPlayerScores({});
     hasInitializedFromFirebase.current = false;  // Reset for new round
+    // Reset single player state
+    setSinglePlayerScore(0);
+    setSinglePlayerComplete(false);
+    setMissedWords([]);
 
     const roundsRef = collection(gameRef, "rounds");
     const q = query(roundsRef, where('roundNumber', '==', currentRound));
@@ -185,9 +194,74 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     loadWordList();
   }, []);
 
+  // Single player mode: calculate score and missed words immediately when time is up
+  useEffect(() => {
+    if (!isSinglePlayer || !timesUp || !roundData?.word || validWordList.length === 0 || singlePlayerComplete) return;
+
+    const mainWord = roundData.word.toUpperCase();
+
+    // Helper: check if a word can be formed from the main word's letters
+    const canFormWord = (word, availableLetters) => {
+      const letterCount = {};
+      for (const letter of availableLetters) {
+        letterCount[letter] = (letterCount[letter] || 0) + 1;
+      }
+      for (const letter of word) {
+        if (!letterCount[letter] || letterCount[letter] === 0) {
+          return false;
+        }
+        letterCount[letter]--;
+      }
+      return true;
+    };
+
+    // Calculate total score - each word gets (length - minWordLength + 1) * 1
+    // (as if playing against 1 opponent who got 0 words)
+    const totalScore = foundWords.reduce((sum, word) => {
+      return sum + (word.length - minWordLength + 1);
+    }, 0);
+    setSinglePlayerScore(totalScore);
+
+    // Find missed words (5+ letters that could be formed but weren't found)
+    const possibleWords = validWordList.filter(word =>
+      word.length >= 5 && word !== mainWord && canFormWord(word, mainWord)
+    );
+
+    const foundWordsUpper = new Set(foundWords.map(w => w.toUpperCase()));
+    const missed = possibleWords
+      .filter(w => !foundWordsUpper.has(w))
+      .sort((a, b) => b.length - a.length || a.localeCompare(b));
+    setMissedWords(missed);
+
+    setSinglePlayerComplete(true);
+
+    // Update Firebase with the score
+    async function updateSinglePlayerScore() {
+      const currentPlayer = players[0];
+      const newGameScore = (currentPlayer.gameScore || 0) + totalScore;
+
+      // Update player's game score
+      const playersRef = collection(gameRef, 'players');
+      const playerDocRef = doc(playersRef, currentPlayerId);
+      await updateDoc(playerDocRef, { gameScore: newGameScore });
+
+      // Mark round as complete
+      await updateDoc(roundRef, {
+        revealComplete: true,
+        playerScores: { [currentPlayerId]: totalScore },
+        players: [{ ...currentPlayer, score: totalScore, gameScore: newGameScore }]
+      });
+    }
+
+    if (roundRef) {
+      updateSinglePlayerScore();
+    }
+  }, [isSinglePlayer, timesUp, roundData?.word, validWordList, foundWords, singlePlayerComplete]);
+
   // Calculate missed words when reveal completes
   useEffect(() => {
     if (!roundData?.revealComplete || !roundData?.word || validWordList.length === 0) return;
+    if (isSinglePlayer) return; // Already handled above for single player
 
     const mainWord = roundData.word.toUpperCase();
 
@@ -679,6 +753,79 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     );
   }
 
+  // Single player results view - shown immediately when time is up
+  const showSinglePlayerResults = () => {
+    if (!singlePlayerComplete) {
+      return (
+        <div className="m-4 text-gray-300">
+          <div className="animate-pulse">Calculating results...</div>
+        </div>
+      );
+    }
+
+    // Get word info with points
+    const getWordPoints = (word) => word.length - minWordLength + 1;
+
+    // Sort words by points (length) descending
+    const sortedWords = [...foundWords].sort((a, b) => b.length - a.length);
+
+    return (
+      <div className="m-2">
+        {/* Score summary */}
+        <div className="bg-gradient-to-b from-green-700 to-green-900 rounded-lg p-4 mb-2 text-center">
+          <p className="text-xl text-green-200 mb-1">Round {currentRound} Complete!</p>
+          <div className="text-5xl font-bold text-white mb-1">{singlePlayerScore}</div>
+          <p className="text-green-200">points</p>
+        </div>
+
+        {/* Words found with points */}
+        <div className="bg-gray-800 p-3 rounded-lg mb-2">
+          <p className="text-lg text-gray-400 mb-2 border-b border-gray-600 pb-1">
+            Your Words ({foundWords.length})
+          </p>
+          <div className="grid grid-cols-2 gap-1">
+            {sortedWords.map((word, index) => {
+              const points = getWordPoints(word);
+              return (
+                <div key={index} className="flex justify-between items-center bg-gray-900 px-2 py-1 rounded">
+                  <span className="text-white text-lg uppercase">{word}</span>
+                  <span className="text-green-400 font-bold">+{points}</span>
+                </div>
+              );
+            })}
+          </div>
+          {foundWords.length === 0 && (
+            <p className="text-gray-500 text-center py-2">No words found</p>
+          )}
+        </div>
+
+        {/* Missed words */}
+        {missedWords.length > 0 && (
+          <div className="bg-gray-800 p-3 rounded-lg mb-2">
+            <p className="text-lg text-gray-400 mb-2 border-b border-gray-600 pb-1">
+              Missed Words ({missedWords.length})
+            </p>
+            <div className="grid grid-cols-3 gap-1 text-lg max-h-48 overflow-y-auto">
+              {missedWords.map((word, index) => (
+                <span key={index} className="text-gray-400">
+                  {word}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Next round button */}
+        <button
+          onClick={startNextRound}
+          className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg text-xl"
+        >
+          {currentRound === (numRounds || players.length) ? 'See Final Results' : 'Next Round'}
+        </button>
+      </div>
+    );
+  };
+
   const handleEndRound = async () => {
     // In untimed mode, notify all players via Firebase
     if (roundRef) {
@@ -787,6 +934,10 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
 
     if (roundData.word) {
       if (timesUp) {
+        // Single player mode: show results directly without reveal sequence
+        if (isSinglePlayer) {
+          return showSinglePlayerResults();
+        }
         if (firstPlayer) {
           return showFirstPlayerChoices();
         }

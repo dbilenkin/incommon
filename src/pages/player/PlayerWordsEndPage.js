@@ -10,6 +10,7 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
 
   const { currentPlayerName } = useContext(CurrentGameContext);
   const firstPlayer = players[0]?.name === currentPlayerName;
+  const isSinglePlayer = players.length === 1;
 
   // Fetch all rounds data
   useEffect(() => {
@@ -566,75 +567,93 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
 
   return (
     <div className="max-w-screen-sm mx-auto p-2">
-      {/* Winner Celebration */}
-      <div className="bg-gradient-to-b from-yellow-600 to-yellow-800 rounded-lg p-4 mb-2 text-center">
-        <div className="text-4xl mb-2">🏆</div>
-        <h2 className="text-2xl font-bold text-white">
-          {stats.leaderboard[0].name} Wins!
-        </h2>
-        <p className="text-yellow-200 text-lg">
-          {stats.leaderboard[0].totalScore} points
-        </p>
-      </div>
+      {/* Winner Celebration / Solo Results */}
+      {isSinglePlayer ? (
+        <div className="bg-gradient-to-b from-blue-600 to-blue-800 rounded-lg p-4 mb-2 text-center">
+          <div className="text-4xl mb-2">🎯</div>
+          <h2 className="text-2xl font-bold text-white">
+            Solo Practice Complete!
+          </h2>
+          <p className="text-blue-200 text-lg">
+            Final Score: {stats.leaderboard[0].totalScore} points
+          </p>
+        </div>
+      ) : (
+        <div className="bg-gradient-to-b from-yellow-600 to-yellow-800 rounded-lg p-4 mb-2 text-center">
+          <div className="text-4xl mb-2">🏆</div>
+          <h2 className="text-2xl font-bold text-white">
+            {stats.leaderboard[0].name} Wins!
+          </h2>
+          <p className="text-yellow-200 text-lg">
+            {stats.leaderboard[0].totalScore} points
+          </p>
+        </div>
+      )}
 
-      {/* Final Standings */}
-      <div className="bg-gray-800 rounded-lg p-4 mb-2">
-        <h3 className="text-xl font-bold text-gray-200 mb-3 border-b border-gray-600 pb-2">
-          Final Standings
-        </h3>
-        <div className="flex flex-col gap-2">
-          {stats.leaderboard.map((player, index) => {
-            const isMe = player.name === currentPlayerName;
-            return (
-              <div
-                key={player.name}
-                className={`flex items-center justify-between px-3 py-2 rounded-lg
-                  ${isMe ? 'bg-green-900 border border-green-500' : 'bg-gray-900'}`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-xl w-8">{getMedal(index)}</span>
-                  <span className={`text-lg ${isMe ? 'font-bold text-white' : 'text-gray-300'}`}>
-                    {player.name}
-                  </span>
+      {/* Final Standings - skip for single player */}
+      {!isSinglePlayer && (
+        <div className="bg-gray-800 rounded-lg p-4 mb-2">
+          <h3 className="text-xl font-bold text-gray-200 mb-3 border-b border-gray-600 pb-2">
+            Final Standings
+          </h3>
+          <div className="flex flex-col gap-2">
+            {stats.leaderboard.map((player, index) => {
+              const isMe = player.name === currentPlayerName;
+              return (
+                <div
+                  key={player.name}
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg
+                    ${isMe ? 'bg-green-900 border border-green-500' : 'bg-gray-900'}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl w-8">{getMedal(index)}</span>
+                    <span className={`text-lg ${isMe ? 'font-bold text-white' : 'text-gray-300'}`}>
+                      {player.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-gray-400 text-sm">{player.totalWords} words</span>
+                    <span className="text-xl font-bold text-green-400">{player.totalScore}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-gray-400 text-sm">{player.totalWords} words</span>
-                  <span className="text-xl font-bold text-green-400">{player.totalScore}</span>
-                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Awards - skip for single player or if no awards */}
+      {!isSinglePlayer && stats.selectedAwards.length > 0 && (
+        <div className="bg-gray-800 rounded-lg p-4 mb-2">
+          <h3 className="text-xl font-bold text-gray-200 mb-3 border-b border-gray-600 pb-2">
+            Awards
+          </h3>
+          <div className="grid grid-cols-2 gap-2">
+            {stats.selectedAwards.map(award => (
+              <div key={award.id} className="bg-gray-900 rounded-lg p-3 text-center">
+                <div className="text-2xl mb-1">{award.emoji}</div>
+                <div className="text-sm text-gray-400">{award.name}</div>
+                <div className="text-lg font-bold text-white">{award.winner}</div>
+                <div className="text-sm text-green-400">{award.detail}</div>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </div>
-
-      {/* Awards */}
-      <div className="bg-gray-800 rounded-lg p-4 mb-2">
-        <h3 className="text-xl font-bold text-gray-200 mb-3 border-b border-gray-600 pb-2">
-          Awards
-        </h3>
-        <div className="grid grid-cols-2 gap-2">
-          {stats.selectedAwards.map(award => (
-            <div key={award.id} className="bg-gray-900 rounded-lg p-3 text-center">
-              <div className="text-2xl mb-1">{award.emoji}</div>
-              <div className="text-sm text-gray-400">{award.name}</div>
-              <div className="text-lg font-bold text-white">{award.winner}</div>
-              <div className="text-sm text-green-400">{award.detail}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* Your Stats */}
       {currentPlayerStats && (
         <div className="bg-gray-800 rounded-lg p-4 mb-2">
           <h3 className="text-xl font-bold text-gray-200 mb-3 border-b border-gray-600 pb-2">
-            Your Stats
+            {isSinglePlayer ? 'Summary' : 'Your Stats'}
           </h3>
           <div className="grid grid-cols-2 gap-3 text-center">
-            <div>
-              <div className="text-3xl font-bold text-green-400">{currentPlayerRank}{currentPlayerRank === 1 ? 'st' : currentPlayerRank === 2 ? 'nd' : currentPlayerRank === 3 ? 'rd' : 'th'}</div>
-              <div className="text-sm text-gray-400">Place</div>
-            </div>
+            {!isSinglePlayer && (
+              <div>
+                <div className="text-3xl font-bold text-green-400">{currentPlayerRank}{currentPlayerRank === 1 ? 'st' : currentPlayerRank === 2 ? 'nd' : currentPlayerRank === 3 ? 'rd' : 'th'}</div>
+                <div className="text-sm text-gray-400">Place</div>
+              </div>
+            )}
             <div>
               <div className="text-3xl font-bold text-green-400">{currentPlayerStats.totalScore}</div>
               <div className="text-sm text-gray-400">Points</div>
@@ -648,7 +667,7 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
               <div className="text-sm text-gray-400">Longest Word</div>
             </div>
           </div>
-          {currentPlayerStats.uniqueWords.length > 0 && (
+          {!isSinglePlayer && currentPlayerStats.uniqueWords.length > 0 && (
             <div className="mt-3 pt-3 border-t border-gray-700">
               <div className="text-sm text-gray-400 mb-2">Your Unique Finds ({currentPlayerStats.uniqueWords.length})</div>
               <div className="flex flex-wrap gap-1">
@@ -680,10 +699,12 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
             <div className="text-2xl font-bold text-gray-200">{stats.totalWordsFound}</div>
             <div className="text-sm text-gray-400">Total Words</div>
           </div>
-          <div>
-            <div className="text-2xl font-bold text-gray-200">{players.length}</div>
-            <div className="text-sm text-gray-400">Players</div>
-          </div>
+          {!isSinglePlayer && (
+            <div>
+              <div className="text-2xl font-bold text-gray-200">{players.length}</div>
+              <div className="text-sm text-gray-400">Players</div>
+            </div>
+          )}
         </div>
 
         {/* Longest Words */}
