@@ -172,9 +172,10 @@ export function getRandomWords(deckType) {
   return randomWords;
 }
 
-export function getWordsOutOfWordsWords() {
+export function getWordsOutOfWordsWords(language = 'en') {
   const randomWords = [];
-  const allWords = words['outofwords'];
+  const wordKey = language === 'ru' ? 'outofwords_ru' : 'outofwords';
+  const allWords = words[wordKey];
 
   // Group words by length
   const wordsByLength = {

@@ -33,6 +33,9 @@ const HostSetupPage = ({ gameData, players }) => {
       return (
         <div className='mt-2 p-6 bg-gray-800 rounded-lg text-2xl'>
           <label className="block border-b pb-2 border-gray-600">
+            Language: <span className='font-bold'>{gameData.language === 'ru' ? 'Русский' : 'English'}</span>
+          </label>
+          <label className="block border-b py-2 border-gray-600">
             Mode: <span className='font-bold'>{gameData.untimed ? 'Untimed' : 'Timed'}</span>
           </label>
           {!gameData.untimed && (

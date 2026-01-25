@@ -7,7 +7,7 @@ import OutOfWordsWords from '../../components/OutOfWordsWords';
 import WordAndScore from '../../components/WordAndScore';
 
 const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
-  const { currentRound, minWordLength, gameTime, numRounds, untimed } = gameData;
+  const { currentRound, minWordLength, gameTime, numRounds, untimed, language = 'en' } = gameData;
   const currentPlayerIndex = currentRound % players.length;
 
   const { currentPlayerName, currentPlayerId } = useContext(CurrentGameContext);
@@ -181,7 +181,8 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
   useEffect(() => {
     const loadWordList = async () => {
       try {
-        const response = await fetch('words/valid_words.txt');
+        const wordFile = language === 'ru' ? 'words/valid_words_ru.txt' : 'words/valid_words.txt';
+        const response = await fetch(wordFile);
         if (response.ok) {
           const text = await response.text();
           const words = text.split('\n').map(w => w.trim().toUpperCase()).filter(w => w);
@@ -192,7 +193,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
       }
     };
     loadWordList();
-  }, []);
+  }, [language]);
 
   // Single player mode: calculate score and missed words immediately when time is up
   useEffect(() => {
@@ -848,7 +849,8 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
           foundWords={foundWords}
           setFoundWords={setFoundWords}
           duration={duration}
-          untimed={untimed} />
+          untimed={untimed}
+          language={language} />
         {/* End Round button for first player in untimed mode */}
         {untimed && firstPlayer && (
           <div className="px-3 pb-3">
@@ -867,7 +869,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
   const showChooseWord = () => {
 
     if (!wordList || wordList.length === 0) {
-      const _wordList = getWordsOutOfWordsWords();
+      const _wordList = getWordsOutOfWordsWords(language);
       setWordList(_wordList);
     }
 

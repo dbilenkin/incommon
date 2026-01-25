@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './OutOfWordsWords.css';
 import TimerBar from './TimerBar';
 
-const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, duration, untimed }) => {
+const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, duration, untimed, language = 'en' }) => {
   const letters = word.split('');
   const [selectedLetters, setSelectedLetters] = useState([]);
   const [currentWord, setCurrentWord] = useState('');
@@ -48,7 +48,8 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
   useEffect(() => {
     const loadWordList = async () => {
       try {
-        const response = await fetch('words/valid_words.txt');
+        const wordFile = language === 'ru' ? 'words/valid_words_ru.txt' : 'words/valid_words.txt';
+        const response = await fetch(wordFile);
         if (!response.ok) {
           throw new Error('Failed to load word list');
         }
@@ -63,7 +64,7 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
     };
 
     loadWordList();
-  }, []);
+  }, [language]);
 
   const handleLetterClick = (letter, index) => {
     const updatedSelectedLetters = [...selectedLetters, { letter, index }];

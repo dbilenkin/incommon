@@ -19,6 +19,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
   const [untimed, setUntimed] = useState(gameData.untimed || false);
   const [roundTime, setRoundTime] = useState(gameData.roundTime || 90);
   const [scattergoriesNumRounds, setScattergoriesNumRounds] = useState(gameData.scattergoriesNumRounds || 3);
+  const [language, setLanguage] = useState(gameData.language || 'en');
   const [showRemovePlayerModal, setShowRemovePlayerModal] = useState(false);
   const [removePlayerName, setRemovePlayerName] = useState('');
 
@@ -42,7 +43,8 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           minWordLength: parseInt(minWordLength),
           gameTime: parseInt(gameTime),
           numRounds: parseInt(numRounds),
-          untimed: untimed
+          untimed: untimed,
+          language: language
         });
       } else if (gameData.gameType === 'Scattergories') {
         await updateDoc(gameRef, {
@@ -53,7 +55,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
     }
 
     updateGame();
-  }, [selectedGameLength, selectedDeck, selectedWordSelection, minWordLength, gameTime, numRounds, untimed, roundTime, scattergoriesNumRounds]);
+  }, [selectedGameLength, selectedDeck, selectedWordSelection, minWordLength, gameTime, numRounds, untimed, language, roundTime, scattergoriesNumRounds]);
 
   const handleWordSelectionChange = (event) => {
     setSelectedWordSelection(event.target.value);
@@ -273,6 +275,29 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
     } else if (gameData.gameType === 'Out of Words, Words') {
       return (
         <>
+          {/* Language selection */}
+          {firstPlayer ? (
+            <div className="flex items-center pb-4 border-b-2 border-gray-700">
+              <label htmlFor="language" className="block font-bold w-5/12">
+                Language
+              </label>
+              <select
+                id="language"
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                className="block appearance-none w-7/12 bg-gray-700 border border-gray-500 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-gray-600 focus:border-gray-500"
+              >
+                <option value="en">English</option>
+                <option value="ru">Русский</option>
+              </select>
+            </div>
+          ) : (
+            <div className=''>
+              <label className="block pb-2 font-normal border-b-2 border-gray-700">
+                Language: <span className='font-bold'>{gameData.language === 'ru' ? 'Русский' : 'English'}</span>
+              </label>
+            </div>
+          )}
           {/* Untimed checkbox */}
           {firstPlayer ? (
             <div className="flex items-center justify-between py-4 border-b-2 border-gray-700">
