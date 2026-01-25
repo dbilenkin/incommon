@@ -36,6 +36,9 @@ const HostSetupPage = ({ gameData, players }) => {
             Language: <span className='font-bold'>{gameData.language === 'ru' ? 'Русский' : 'English'}</span>
           </label>
           <label className="block border-b py-2 border-gray-600">
+            Column Layout: <span className='font-bold'>{gameData.columnLayout ? 'Yes' : 'No'}</span>
+          </label>
+          <label className="block border-b py-2 border-gray-600">
             Mode: <span className='font-bold'>{gameData.untimed ? 'Untimed' : 'Timed'}</span>
           </label>
           {!gameData.untimed && (

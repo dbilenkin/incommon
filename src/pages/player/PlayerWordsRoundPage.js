@@ -7,7 +7,7 @@ import OutOfWordsWords from '../../components/OutOfWordsWords';
 import WordAndScore from '../../components/WordAndScore';
 
 const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
-  const { currentRound, minWordLength, gameTime, numRounds, untimed, language = 'en' } = gameData;
+  const { currentRound, minWordLength, gameTime, numRounds, untimed, language = 'en', columnLayout = false } = gameData;
   const currentPlayerIndex = currentRound % players.length;
 
   const { currentPlayerName, currentPlayerId } = useContext(CurrentGameContext);
@@ -850,7 +850,8 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
           setFoundWords={setFoundWords}
           duration={duration}
           untimed={untimed}
-          language={language} />
+          language={language}
+          columnLayout={columnLayout} />
         {/* End Round button for first player in untimed mode */}
         {untimed && firstPlayer && (
           <div className="px-3 pb-3">

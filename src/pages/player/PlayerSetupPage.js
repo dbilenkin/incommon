@@ -20,6 +20,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
   const [roundTime, setRoundTime] = useState(gameData.roundTime || 90);
   const [scattergoriesNumRounds, setScattergoriesNumRounds] = useState(gameData.scattergoriesNumRounds || 3);
   const [language, setLanguage] = useState(gameData.language || 'en');
+  const [columnLayout, setColumnLayout] = useState(gameData.columnLayout || false);
   const [showRemovePlayerModal, setShowRemovePlayerModal] = useState(false);
   const [removePlayerName, setRemovePlayerName] = useState('');
 
@@ -44,7 +45,8 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           gameTime: parseInt(gameTime),
           numRounds: parseInt(numRounds),
           untimed: untimed,
-          language: language
+          language: language,
+          columnLayout: columnLayout
         });
       } else if (gameData.gameType === 'Scattergories') {
         await updateDoc(gameRef, {
@@ -55,7 +57,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
     }
 
     updateGame();
-  }, [selectedGameLength, selectedDeck, selectedWordSelection, minWordLength, gameTime, numRounds, untimed, language, roundTime, scattergoriesNumRounds]);
+  }, [selectedGameLength, selectedDeck, selectedWordSelection, minWordLength, gameTime, numRounds, untimed, language, columnLayout, roundTime, scattergoriesNumRounds]);
 
   const handleWordSelectionChange = (event) => {
     setSelectedWordSelection(event.target.value);
@@ -295,6 +297,30 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
             <div className=''>
               <label className="block pb-2 font-normal border-b-2 border-gray-700">
                 Language: <span className='font-bold'>{gameData.language === 'ru' ? 'Русский' : 'English'}</span>
+              </label>
+            </div>
+          )}
+          {/* Column Layout checkbox */}
+          {firstPlayer ? (
+            <div className="flex items-center justify-between py-4 border-b-2 border-gray-700">
+              <label htmlFor="columnLayout" className="block font-bold">
+                Column Layout
+              </label>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="columnLayout"
+                  checked={columnLayout}
+                  onChange={(e) => setColumnLayout(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+              </label>
+            </div>
+          ) : (
+            <div className=''>
+              <label className="block py-2 font-normal border-b-2 border-gray-700">
+                Column Layout: <span className='font-bold'>{gameData.columnLayout ? 'Yes' : 'No'}</span>
               </label>
             </div>
           )}

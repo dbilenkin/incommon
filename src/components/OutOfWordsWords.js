@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './OutOfWordsWords.css';
 import TimerBar from './TimerBar';
 
-const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, duration, untimed, language = 'en' }) => {
+const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, duration, untimed, language = 'en', columnLayout = false }) => {
   const letters = word.split('');
   const [selectedLetters, setSelectedLetters] = useState([]);
   const [currentWord, setCurrentWord] = useState('');
@@ -156,30 +156,32 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
         const bottomRow = letterOrder.slice(topRowCount);
 
         return (
-          <div className="letters-container px-2 pb-1">
-            <div className="flex justify-center">
-              {topRow.map((originalIndex) => (
-                <button
-                  key={originalIndex}
-                  onClick={() => handleLetterClick(letters[originalIndex], originalIndex)}
-                  disabled={isLetterSelected(originalIndex)}
-                  className={`letter-button w-14 h-14 m-1 rounded shadow text-3xl font-bold ${isLetterSelected(originalIndex) ? 'bg-gray-600 text-gray-400' : 'bg-blue-500 text-white'}`}
-                >
-                  {letters[originalIndex].toUpperCase()}
-                </button>
-              ))}
-            </div>
-            <div className="flex justify-center">
-              {bottomRow.map((originalIndex) => (
-                <button
-                  key={originalIndex}
-                  onClick={() => handleLetterClick(letters[originalIndex], originalIndex)}
-                  disabled={isLetterSelected(originalIndex)}
-                  className={`letter-button w-14 h-14 m-1 rounded shadow text-3xl font-bold ${isLetterSelected(originalIndex) ? 'bg-gray-600 text-gray-400' : 'bg-blue-500 text-white'}`}
-                >
-                  {letters[originalIndex].toUpperCase()}
-                </button>
-              ))}
+          <div className="letters-container px-2 pb-1 flex justify-center">
+            <div className={columnLayout ? '' : 'flex flex-col items-center'}>
+              <div className="flex">
+                {topRow.map((originalIndex) => (
+                  <button
+                    key={originalIndex}
+                    onClick={() => handleLetterClick(letters[originalIndex], originalIndex)}
+                    disabled={isLetterSelected(originalIndex)}
+                    className={`letter-button w-14 h-14 m-1 rounded shadow text-3xl font-bold ${isLetterSelected(originalIndex) ? 'bg-gray-600 text-gray-400' : 'bg-blue-500 text-white'}`}
+                  >
+                    {letters[originalIndex].toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <div className="flex">
+                {bottomRow.map((originalIndex) => (
+                  <button
+                    key={originalIndex}
+                    onClick={() => handleLetterClick(letters[originalIndex], originalIndex)}
+                    disabled={isLetterSelected(originalIndex)}
+                    className={`letter-button w-14 h-14 m-1 rounded shadow text-3xl font-bold ${isLetterSelected(originalIndex) ? 'bg-gray-600 text-gray-400' : 'bg-blue-500 text-white'}`}
+                  >
+                    {letters[originalIndex].toUpperCase()}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         );
