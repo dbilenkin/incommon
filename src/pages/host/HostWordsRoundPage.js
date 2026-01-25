@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
+import { useTranslation } from 'react-i18next';
 import Nav from '../../components/Nav';
 import WordAndScore from '../../components/WordAndScore';
 
 const HostWordsRoundPage = ({ gameData, gameRef, players }) => {
+  const { t } = useTranslation(['words', 'common']);
   const { currentRound, shortId, minWordLength } = gameData;
   const currentPlayerIndex = currentRound % players.length;
   const chooserName = players[currentPlayerIndex].name;
@@ -50,14 +52,14 @@ const HostWordsRoundPage = ({ gameData, gameRef, players }) => {
   const getWord = () => {
     const word = roundData.word;
     return (
-      word ? <span>Word:  <span className='text-green-500 font-bold uppercase'>{word}</span></span> :
-        <span>Waiting for <span className="text-green-500 font-bold">{chooserName}</span> to choose the word</span>
+      word ? <span>{t('host.word')}:  <span className='text-green-500 font-bold uppercase'>{word}</span></span> :
+        <span>{t('host.waitingForChooser', { name: chooserName })}</span>
     )
   }
 
   const getGameCode = () => {
     return (
-      <span>Game Code:  <span className='text-yellow-500 font-bold uppercase'>{shortId}</span></span>
+      <span>{t('host.gameCode')}:  <span className='text-yellow-500 font-bold uppercase'>{shortId}</span></span>
     )
   }
 
@@ -119,7 +121,7 @@ const HostWordsRoundPage = ({ gameData, gameRef, players }) => {
                   {player.name}
                 </div>
                 <div className="text-lg">
-                  {player.foundWords?.length || 0} words | {playerScores[player.id] || 0} pts
+                  {player.foundWords?.length || 0} {t('host.words')} | {playerScores[player.id] || 0} {t('host.pts')}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 text-2xl">

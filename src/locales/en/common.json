@@ -1,0 +1,46 @@
+{
+  "buttons": {
+    "cancel": "Cancel",
+    "ok": "Ok",
+    "join": "Join",
+    "joinGame": "Join Game",
+    "createGame": "Create Game",
+    "startGame": "Start Game",
+    "nextRound": "Next Round",
+    "endGame": "End Game",
+    "playAgain": "Play Again",
+    "next": "Next",
+    "revealWords": "Reveal Words",
+    "endRound": "End Round",
+    "use": "Use",
+    "delete": "Delete",
+    "enter": "Enter",
+    "scramble": "Scramble",
+    "openHostPage": "Open Host Page"
+  },
+  "nav": {
+    "round": "Round {{round}}"
+  },
+  "toggle": {
+    "soundsOn": "Sounds On",
+    "soundsOff": "Sounds Off"
+  },
+  "celebration": {
+    "incredible": "INCREDIBLE!!!",
+    "amazing": "Amazing!",
+    "nice": "nice"
+  },
+  "modal": {
+    "removePlayer": "Remove Player",
+    "removePlayerConfirm": "Are you sure you want to remove {{name}}?",
+    "removeYourself": "yourself",
+    "lastOneStanding": "Last One Standing",
+    "lastOneStandingMessage": "You can't remove yourself, silly! You're the last one here."
+  },
+  "language": {
+    "en": "English",
+    "ru": "Russian"
+  },
+  "yes": "Yes",
+  "no": "No"
+}

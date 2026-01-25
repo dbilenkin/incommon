@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, updateDoc, doc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { useTranslation } from 'react-i18next';
 import { db } from '../utils/Firebase';
 import { generateShortId } from '../utils';
 import { CurrentGameContext } from '../contexts/CurrentGameContext';
@@ -8,6 +9,7 @@ import Button from '../components/Button';
 import Nav from '../components/Nav';
 
 function StartPage() {
+  const { t } = useTranslation(['startPage', 'common']);
   const { setCurrentPlayerName, setCurrentPlayerId, setGameRef } = useContext(CurrentGameContext);
 
   useEffect(() => {
@@ -106,7 +108,7 @@ function StartPage() {
 
   const handleJoinGame = async () => {
     if (!playerName || !shortId) {
-      alert('Please enter your name and game ID.');
+      alert(t('alerts.enterNameAndId'));
       return;
     }
 
@@ -141,7 +143,7 @@ function StartPage() {
           console.error(error);
         });
       } else {
-        alert('Invalid game ID.');
+        alert(t('alerts.invalidGameId'));
       }
     });
   };
@@ -166,7 +168,7 @@ function StartPage() {
       <div className='max-w-screen-md mx-auto text-gray-100'>
         <div className="bg-gray-800 mx-4 p-4 mt-4 rounded-lg">
           <div className="mb-4">
-            <label htmlFor="gameType" className="block text-gray-300 text-2xl font-bold mb-2">Select Game</label>
+            <label htmlFor="gameType" className="block text-gray-300 text-2xl font-bold mb-2">{t('selectGame')}</label>
             <select
               id="gameType"
               value={gameType}
@@ -179,20 +181,20 @@ function StartPage() {
                 backgroundSize: '1.5rem'
               }}
             >
-              <option value="Out of Words, Words">Out of Words, Words</option>
-              <option value="Scattergories">Scattergories</option>
-              <option value="Incommon">Incommon</option>
+              <option value="Out of Words, Words">{t('gameTypes.words')}</option>
+              <option value="Scattergories">{t('gameTypes.scattergories')}</option>
+              <option value="Incommon">{t('gameTypes.incommon')}</option>
             </select>
           </div>
 
           <Button onClick={handleCreateGame} buttonType="large" className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded">
-            Create Game
+            {t('common:buttons.createGame')}
           </Button>
         </div>
         <div className='text-2xl bg-gray-800 mx-4 p-4 mt-4 rounded-lg'>
           <div className='flex'>
             <div className="mb-4 w-2/3">
-              <label htmlFor="playerName" className="block text-gray-300 text-2xl font-bold mb-2">Your Name</label>
+              <label htmlFor="playerName" className="block text-gray-300 text-2xl font-bold mb-2">{t('yourName')}</label>
               <input
                 type="text"
                 id="playerName"
@@ -203,7 +205,7 @@ function StartPage() {
             </div>
 
             <div className="ml-4 mb-4 w-1/3">
-              <label htmlFor="shortId" className="block text-gray-300 text-2xl font-bold mb-2">Game ID</label>
+              <label htmlFor="shortId" className="block text-gray-300 text-2xl font-bold mb-2">{t('gameId')}</label>
               <input
                 type="text"
                 id="shortId"
@@ -214,28 +216,28 @@ function StartPage() {
             </div>
           </div>
           <Button onClick={handleJoinGame} buttonType="large" className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded">
-            Join Game
+            {t('common:buttons.joinGame')}
           </Button>
         </div>
 
         {/* Recent Games */}
         <div className='bg-gray-800 mx-4 p-4 mt-4 rounded-lg'>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xl text-gray-400">Recent Games</p>
+            <p className="text-xl text-gray-400">{t('recentGames')}</p>
             <div className="flex items-center gap-2">
               <select
                 value={recentGamesFilter}
                 onChange={(e) => setRecentGamesFilter(e.target.value)}
                 className="bg-gray-700 text-gray-200 text-base px-2 py-1 rounded border border-gray-600 focus:outline-none"
               >
-                <option value="Out of Words, Words">Words</option>
-                <option value="Scattergories">Scattergories</option>
-                <option value="Incommon">Incommon</option>
+                <option value="Out of Words, Words">{t('gameTypes.wordsShort')}</option>
+                <option value="Scattergories">{t('gameTypes.scattergories')}</option>
+                <option value="Incommon">{t('gameTypes.incommon')}</option>
               </select>
               <button
                 onClick={fetchRecentGames}
                 className="p-1 text-gray-400 hover:text-white"
-                title="Refresh"
+                title={t('refresh')}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -270,14 +272,14 @@ function StartPage() {
                       onClick={() => handleQuickJoin(game)}
                       className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg text-lg"
                     >
-                      Join
+                      {t('common:buttons.join')}
                     </button>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-2">No games waiting</p>
+            <p className="text-gray-500 text-center py-2">{t('noGamesWaiting')}</p>
           )}
         </div>
       </div>
@@ -287,11 +289,11 @@ function StartPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-gray-800 rounded-lg p-6 mx-4 w-full max-w-sm">
             <p className="text-xl text-gray-300 mb-4">
-              Join game <span className="font-bold text-yellow-400">{selectedGame?.shortId}</span>
+              {t('joinModal.title', { shortId: selectedGame?.shortId })}
             </p>
             <input
               type="text"
-              placeholder="Enter your name"
+              placeholder={t('joinModal.enterName')}
               value={modalName}
               onChange={(e) => setModalName(e.target.value.slice(0, 11))}
               onKeyDown={(e) => e.key === 'Enter' && handleModalJoin()}
@@ -303,14 +305,14 @@ function StartPage() {
                 onClick={() => setShowModal(false)}
                 className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold rounded-lg text-lg"
               >
-                Cancel
+                {t('common:buttons.cancel')}
               </button>
               <button
                 onClick={handleModalJoin}
                 disabled={!modalName.trim()}
                 className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 text-white font-semibold rounded-lg text-lg"
               >
-                Join
+                {t('common:buttons.join')}
               </button>
             </div>
           </div>
@@ -321,12 +323,12 @@ function StartPage() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-gray-800 rounded-lg p-6 mx-4 w-full max-w-sm">
-            <p className="text-xl text-gray-300 mb-2">Game Created!</p>
+            <p className="text-xl text-gray-300 mb-2">{t('createModal.title')}</p>
             <p className="text-3xl font-bold text-yellow-400 mb-4">{createdGame?.shortId}</p>
 
             <input
               type="text"
-              placeholder="Enter your name"
+              placeholder={t('createModal.enterName')}
               value={createModalName}
               onChange={(e) => setCreateModalName(e.target.value.slice(0, 11))}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateModalJoin()}
@@ -339,14 +341,14 @@ function StartPage() {
               disabled={!createModalName.trim()}
               className="w-full py-3 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 text-white font-semibold rounded-lg text-lg mb-3"
             >
-              Join Game
+              {t('common:buttons.joinGame')}
             </button>
 
             <button
               onClick={handleCreateModalHost}
               className="w-full py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold rounded-lg text-base"
             >
-              Open Host Page
+              {t('common:buttons.openHostPage')}
             </button>
           </div>
         </div>

@@ -1,0 +1,37 @@
+{
+  "gameCode": "Код игры",
+  "joinedPlayers": "Участники",
+  "startGamePrompt": "{{name}}, начните игру, когда все присоединятся!",
+  "settings": {
+    "language": "Язык",
+    "columnLayout": "Расположение колонкой",
+    "untimedMode": "Без таймера",
+    "mode": "Режим",
+    "timed": "С таймером",
+    "untimed": "Без таймера",
+    "gameTime": "Время игры (минуты)",
+    "minWordLength": "Минимальная длина слова",
+    "numRounds": "Количество раундов",
+    "deck": "Колода",
+    "gameLength": "Длина игры",
+    "wordChoice": "Выбор слова",
+    "roundTime": "Время раунда (секунды)"
+  },
+  "deckTypes": {
+    "life": "Жизнь",
+    "celebrities": "Знаменитости",
+    "actors": "Актёры",
+    "famousPeople": "Известные люди",
+    "animals": "Животные",
+    "custom": "Своя*"
+  },
+  "gameLengths": {
+    "short": "Короткая",
+    "medium": "Средняя",
+    "long": "Длинная"
+  },
+  "wordSelections": {
+    "wordList": "Список слов",
+    "custom": "Своё"
+  }
+}

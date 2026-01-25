@@ -1,0 +1,67 @@
+{
+  "winner": {
+    "title": "{{name}} победил!",
+    "points": "{{count}} очков"
+  },
+  "singlePlayer": {
+    "title": "Одиночная игра завершена!",
+    "finalScore": "Итоговый счёт: {{score}} очков"
+  },
+  "standings": {
+    "title": "Итоговые результаты",
+    "words": "слов"
+  },
+  "awards": {
+    "title": "Награды",
+    "wordWizard": "Мастер слов",
+    "bigWordEnergy": "Большие слова",
+    "hotStreak": "Горячая серия",
+    "uniqueMind": "Уникальный ум",
+    "basic": "Базовый",
+    "vowelMovement": "Гласные",
+    "consonantQueen": "Согласные",
+    "alphabetSoup": "Алфавитный суп",
+    "photoFinish": "Фото-финиш",
+    "hiveMind": "Роевой разум",
+    "loneWolf": "Одинокий волк",
+    "steadyEddie": "Стабильный",
+    "comebackKid": "Камбэк",
+    "sleeperHit": "Неожиданный успех",
+    "details": {
+      "words": "{{count}} слов",
+      "unique": "{{count}} уникальных",
+      "obvious": "{{count}} очевидных",
+      "letters": "{{count}} букв",
+      "ptsBehind": "{{count}} очк. позади",
+      "withPlayer": "{{count}} с {{name}}",
+      "avgOverlap": "{{value}} среднее совпадение",
+      "ptsPerRound": "~{{value}} очк./раунд",
+      "swing": "+{{value}} разброс",
+      "inOneRound": "{{count}} за раунд"
+    }
+  },
+  "stats": {
+    "yourStats": "Ваша статистика",
+    "summary": "Итоги",
+    "place": "Место",
+    "points": "Очки",
+    "wordsFound": "Найдено слов",
+    "longestWord": "Самое длинное",
+    "yourUniqueFinds": "Ваши уникальные находки ({{count}})",
+    "more": "+{{count}} ещё"
+  },
+  "gameStats": {
+    "title": "Статистика игры",
+    "rounds": "Раундов",
+    "totalWords": "Всего слов",
+    "players": "Игроков",
+    "longestWordsOfGame": "Самые длинные слова игры"
+  },
+  "ordinal": {
+    "1": "-е",
+    "2": "-е",
+    "3": "-е",
+    "other": "-е"
+  },
+  "waitingForNewGame": "Ожидание новой игры от {{name}}..."
+}

@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Nav from '../../components/Nav';
 import { displayFormattedDeckType, displayGameLength, displayWordSelection } from '../../utils';
 import Toggle from '../../components/Toggle';
 import PlayerJoinGraph from '../../components/PlayerJoinGraph';
 
 const HostSetupPage = ({ gameData, players }) => {
+  const { t } = useTranslation(['setup', 'common']);
   const { shortId, gameType } = gameData;
 
   useEffect(() => {
@@ -19,13 +21,13 @@ const HostSetupPage = ({ gameData, players }) => {
       return (
         <div className='mt-2 p-6 bg-gray-800 rounded-lg text-2xl'>
           <label htmlFor="deckType" className="block border-b pb-2 border-gray-600">
-            Deck: <span className='font-bold'>{displayFormattedDeckType(gameData.deckType)}</span>
+            {t('settings.deck')}: <span className='font-bold'>{displayFormattedDeckType(gameData.deckType)}</span>
           </label>
           <label htmlFor="deckType" className="block border-b py-2 border-gray-600">
-            Game Length: <span className='font-bold'>{displayGameLength(gameData.gameLength)}</span>
+            {t('settings.gameLength')}: <span className='font-bold'>{displayGameLength(gameData.gameLength)}</span>
           </label>
           <label htmlFor="deckType" className="block pt-2">
-            Word Selection: <span className='font-bold'>{displayWordSelection(gameData.wordSelection)}</span>
+            {t('settings.wordChoice')}: <span className='font-bold'>{displayWordSelection(gameData.wordSelection)}</span>
           </label>
         </div>
       );
@@ -33,24 +35,24 @@ const HostSetupPage = ({ gameData, players }) => {
       return (
         <div className='mt-2 p-6 bg-gray-800 rounded-lg text-2xl'>
           <label className="block border-b pb-2 border-gray-600">
-            Language: <span className='font-bold'>{gameData.language === 'ru' ? 'Русский' : 'English'}</span>
+            {t('settings.language')}: <span className='font-bold'>{gameData.language === 'ru' ? 'Русский' : 'English'}</span>
           </label>
           <label className="block border-b py-2 border-gray-600">
-            Column Layout: <span className='font-bold'>{gameData.columnLayout ? 'Yes' : 'No'}</span>
+            {t('settings.columnLayout')}: <span className='font-bold'>{gameData.columnLayout ? t('common:yes') : t('common:no')}</span>
           </label>
           <label className="block border-b py-2 border-gray-600">
-            Mode: <span className='font-bold'>{gameData.untimed ? 'Untimed' : 'Timed'}</span>
+            {t('settings.mode')}: <span className='font-bold'>{gameData.untimed ? t('settings.untimed') : t('settings.timed')}</span>
           </label>
           {!gameData.untimed && (
             <label className="block border-b py-2 border-gray-600">
-              Game Time (Minutes): <span className='font-bold'>{gameData.gameTime}</span>
+              {t('settings.gameTime')}: <span className='font-bold'>{gameData.gameTime}</span>
             </label>
           )}
           <label className="block border-b py-2 border-gray-600">
-            Minimum Word Length: <span className='font-bold'>{gameData.minWordLength}</span>
+            {t('settings.minWordLength')}: <span className='font-bold'>{gameData.minWordLength}</span>
           </label>
           <label className="block pt-2">
-            Number of Rounds: <span className='font-bold'>{gameData.numRounds}</span>
+            {t('settings.numRounds')}: <span className='font-bold'>{gameData.numRounds}</span>
           </label>
         </div>
       );
@@ -58,10 +60,10 @@ const HostSetupPage = ({ gameData, players }) => {
       return (
         <div className='mt-2 p-6 bg-gray-800 rounded-lg text-2xl'>
           <label className="block border-b pb-2 border-gray-600">
-            Round Time: <span className='font-bold'>{gameData.roundTime || 90} seconds</span>
+            {t('settings.roundTime')}: <span className='font-bold'>{gameData.roundTime || 90}</span>
           </label>
           <label className="block pt-2">
-            Number of Rounds: <span className='font-bold'>{gameData.numRounds || 3}</span>
+            {t('settings.numRounds')}: <span className='font-bold'>{gameData.numRounds || 3}</span>
           </label>
         </div>
       );
@@ -74,18 +76,18 @@ const HostSetupPage = ({ gameData, players }) => {
       <div className="max-w-screen-md mx-auto px-4 pt-2 text-gray-200"> {/* text color adjusted for dark background */}
         <div className='flex justify-between bg-gray-800 p-6 rounded-lg'>
           <h2 className="text-5xl font-bold text-gray-200 ">
-            Game Code: <span className='text-green-500'>{shortId}</span>
+            {t('gameCode')}: <span className='text-green-500'>{shortId}</span>
           </h2>
-          <Toggle className="text-2xl text-gray-200">Allow Sounds</Toggle>
+          <Toggle className="text-2xl text-gray-200"></Toggle>
         </div>
 
         <div className='mt-2 p-6 bg-gray-800 rounded-lg'>
           <div className="flex justify-between items-end pb-2 text-2xl">
             <div className='text-2xl'>
-              Joined Players
+              {t('joinedPlayers')}
             </div>
             {players.length > 1 && <div className='text-xl'>
-              <span className='text-yellow-400 font-bold'>{players[0].name}</span> start the game once everyone joins!
+              {t('startGamePrompt', { name: players[0].name })}
             </div>}
           </div>
           <div className='md:col-span-1 bg-gray-100 border border-4 border-gray-500 rounded-lg'>

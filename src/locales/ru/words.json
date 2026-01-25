@@ -1,0 +1,46 @@
+{
+  "round": "Раунд {{round}}",
+  "chooseWord": "Выберите слово для",
+  "orTypeOwn": "Или введите своё:",
+  "enterWord": "Введите слово...",
+  "waitingForWord": "Ожидание выбора слова от {{name}}",
+  "tapLetters": "нажмите буквы",
+  "found": "Найдено",
+  "loading": "Загрузка словаря...",
+  "loadingRound": "Загрузка раунда...",
+  "calculatingResults": "Подсчёт результатов...",
+  "toasts": {
+    "tooShort": "Слишком коротко!",
+    "cantUseOriginal": "Нельзя использовать исходное слово!",
+    "alreadyFound": "Уже найдено!",
+    "notValid": "Не является словом!"
+  },
+  "timesUp": {
+    "timed": "Время вышло!",
+    "untimed": "Раунд завершён!",
+    "startReveal": "Теперь {{name}} может начать показ."
+  },
+  "reveal": {
+    "words": "Слова {{name}}",
+    "yourWords": "Ваши слова ({{count}})",
+    "leaderboard": "Таблица лидеров",
+    "missedWords": "Пропущенные слова ({{count}})"
+  },
+  "waiting": {
+    "forPlayer": "Ожидание {{name}}"
+  },
+  "singlePlayer": {
+    "roundComplete": "Раунд {{round}} завершён!",
+    "points": "очков",
+    "yourWords": "Ваши слова ({{count}})",
+    "noWordsFound": "Слова не найдены",
+    "seeFinalResults": "Показать итоги"
+  },
+  "host": {
+    "word": "Слово",
+    "waitingForChooser": "Ожидание выбора слова от {{name}}",
+    "gameCode": "Код игры",
+    "words": "слов",
+    "pts": "очк"
+  }
+}

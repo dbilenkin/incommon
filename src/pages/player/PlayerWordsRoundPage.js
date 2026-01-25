@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { doc, onSnapshot, updateDoc, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { useTranslation } from 'react-i18next';
 import { CurrentGameContext } from '../../contexts/CurrentGameContext';
 import Button from '../../components/Button';
 import { getWordsOutOfWordsWords } from '../../utils';
@@ -7,6 +8,7 @@ import OutOfWordsWords from '../../components/OutOfWordsWords';
 import WordAndScore from '../../components/WordAndScore';
 
 const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
+  const { t } = useTranslation(['words', 'common']);
   const { currentRound, minWordLength, gameTime, numRounds, untimed, language = 'en', columnLayout = false } = gameData;
   const currentPlayerIndex = currentRound % players.length;
 
@@ -58,7 +60,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
           await updateDoc(currentPlayerDocRef, {
             foundWords: foundWords
           });
-    
+
         } catch (error) {
           console.error("Error updating player's chosenCards: ", error);
         }
@@ -558,9 +560,6 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
 
     // Progress text
     const currentRevealPlayer = displayPlayerOrder[currentRevealIdx];
-    const progressText = currentRevealPlayer
-      ? `${currentRevealPlayer.name}'s words`
-      : '';
 
     // Get current word info for display
     const revealedWords = firstPlayer ? globallyRevealedWords : (roundData.globallyRevealedWords || {});
@@ -576,9 +575,9 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     // Get celebration based on word length (same as WordAndScore)
     const getCelebration = (length, points) => {
       if (points === 0) return { emoji: '', text: '', textClass: '' };
-      if (length >= 7) return { emoji: '🔥', text: 'INCREDIBLE!!!', textClass: 'text-yellow-400 font-black italic' };
-      if (length === 6) return { emoji: '⭐', text: 'Amazing!', textClass: 'text-yellow-300 font-bold italic' };
-      if (length === 5) return { emoji: '✨', text: 'nice', textClass: 'text-blue-300 font-semibold' };
+      if (length >= 7) return { emoji: '', text: t('common:celebration.incredible'), textClass: 'text-yellow-400 font-black italic' };
+      if (length === 6) return { emoji: '', text: t('common:celebration.amazing'), textClass: 'text-yellow-300 font-bold italic' };
+      if (length === 5) return { emoji: '', text: t('common:celebration.nice'), textClass: 'text-blue-300 font-semibold' };
       return { emoji: '', text: '', textClass: '' };
     };
 
@@ -591,21 +590,21 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
           <div className="bg-gray-800 border border-green-500 rounded-lg mb-2 p-3">
             {/* Top row: whose words + Next button */}
             <div className="flex items-center justify-between">
-              <p className="text-xl text-gray-200 font-semibold">{currentRevealPlayer?.name}'s Words</p>
+              <p className="text-xl text-gray-200 font-semibold">{t('reveal.words', { name: currentRevealPlayer?.name })}</p>
               {firstPlayer && (
                 <button
                   onClick={handleNextReveal}
                   disabled={isAnimating}
                   className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-600 text-white font-semibold rounded-lg text-lg whitespace-nowrap"
                 >
-                  Next
+                  {t('common:buttons.next')}
                 </button>
               )}
             </div>
 
             {/* Word, score, and celebration - all on one line */}
             <div className="flex items-center justify-center gap-2 my-3 min-h-[48px]">
-              {celebration.emoji && currentWordInfo && (
+              {celebration.text && currentWordInfo && (
                 <span className="text-2xl">{celebration.emoji}</span>
               )}
               <span className="text-4xl font-bold text-green-400 uppercase">
@@ -639,14 +638,14 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
         {/* All players scores - sorted by points - only show after reveal complete */}
         {roundData.revealComplete && (
           <div className="bg-gray-800 p-3 rounded-lg mb-2">
-            <p className="text-lg text-gray-400 mb-2 border-b border-gray-600 pb-1">Leaderboard</p>
+            <p className="text-lg text-gray-400 mb-2 border-b border-gray-600 pb-1">{t('reveal.leaderboard')}</p>
             <div className="flex flex-col gap-1">
               {[...displayPlayerOrder]
                 .map(player => ({ ...player, score: myScores[player.id] || 0 }))
                 .sort((a, b) => b.score - a.score)
                 .map((player, index) => {
                   const isMe = player.name === currentPlayerName;
-                  const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+                  const medal = index === 0 ? '' : index === 1 ? '' : index === 2 ? '' : '';
 
                   return (
                     <div
@@ -669,7 +668,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
         {roundData.revealComplete && missedWords.length > 0 && (
           <div className="bg-gray-800 p-3 rounded-lg mb-2">
             <p className="text-lg text-gray-400 mb-2 border-b border-gray-600 pb-1">
-              Missed Words ({missedWords.length})
+              {t('reveal.missedWords', { count: missedWords.length })}
             </p>
             <div className="grid grid-cols-3 gap-1 text-lg">
               {missedWords.map((word, index) => (
@@ -683,7 +682,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
 
         {/* Player's own words */}
         <div className="bg-gray-800 p-3 rounded-lg">
-          <p className="text-lg text-gray-400 mb-2 border-b border-gray-600 pb-1">Your Words ({myWords.length})</p>
+          <p className="text-lg text-gray-400 mb-2 border-b border-gray-600 pb-1">{t('reveal.yourWords', { count: myWords.length })}</p>
           <div className="grid grid-cols-2 gap-1 text-xl">
             {myWords.map((word, index) => {
               const { isRevealed, isCrossedOut, points } = getWordDisplayInfo(word);
@@ -711,11 +710,11 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
                 onClick={startNextRound}
                 className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg text-xl"
               >
-                {currentRound === (numRounds || players.length) ? 'End Game' : 'Next Round'}
+                {currentRound === (numRounds || players.length) ? t('common:buttons.endGame') : t('common:buttons.nextRound')}
               </button>
             ) : (
               <p className="text-xl text-gray-300 bg-gray-800 px-3 py-3 rounded-lg text-center">
-                Waiting for <span className="text-green-500 font-bold">{players[0].name}</span>
+                {t('waiting.forPlayer', { name: players[0].name })}
               </p>
             )}
           </div>
@@ -734,7 +733,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     return (
       <div className='m-4'>
         <Button className="w-full" buttonType="large" onClick={handleRevealWords}>
-          Reveal Words
+          {t('common:buttons.revealWords')}
         </Button>
       </div>
     );
@@ -749,7 +748,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     // Otherwise show waiting message
     return (
       <p className="mx-4 text-2xl font-semibold text-gray-300 bg-gray-800 px-4 py-4 rounded-lg shadow mt-4">
-        {untimed ? 'Round ended!' : 'Times up!'} <br></br>Now <span className="text-green-500 font-bold">{players[0].name}</span> can start the reveal.
+        {untimed ? t('timesUp.untimed') : t('timesUp.timed')} <br></br>{t('timesUp.startReveal', { name: players[0].name })}
       </p>
     );
   }
@@ -759,7 +758,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     if (!singlePlayerComplete) {
       return (
         <div className="m-4 text-gray-300">
-          <div className="animate-pulse">Calculating results...</div>
+          <div className="animate-pulse">{t('calculatingResults')}</div>
         </div>
       );
     }
@@ -774,15 +773,15 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
       <div className="m-2">
         {/* Score summary */}
         <div className="bg-gradient-to-b from-green-700 to-green-900 rounded-lg p-4 mb-2 text-center">
-          <p className="text-xl text-green-200 mb-1">Round {currentRound} Complete!</p>
+          <p className="text-xl text-green-200 mb-1">{t('singlePlayer.roundComplete', { round: currentRound })}</p>
           <div className="text-5xl font-bold text-white mb-1">{singlePlayerScore}</div>
-          <p className="text-green-200">points</p>
+          <p className="text-green-200">{t('singlePlayer.points')}</p>
         </div>
 
         {/* Words found with points */}
         <div className="bg-gray-800 p-3 rounded-lg mb-2">
           <p className="text-lg text-gray-400 mb-2 border-b border-gray-600 pb-1">
-            Your Words ({foundWords.length})
+            {t('singlePlayer.yourWords', { count: foundWords.length })}
           </p>
           <div className="grid grid-cols-2 gap-1">
             {sortedWords.map((word, index) => {
@@ -796,7 +795,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
             })}
           </div>
           {foundWords.length === 0 && (
-            <p className="text-gray-500 text-center py-2">No words found</p>
+            <p className="text-gray-500 text-center py-2">{t('singlePlayer.noWordsFound')}</p>
           )}
         </div>
 
@@ -804,7 +803,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
         {missedWords.length > 0 && (
           <div className="bg-gray-800 p-3 rounded-lg mb-2">
             <p className="text-lg text-gray-400 mb-2 border-b border-gray-600 pb-1">
-              Missed Words ({missedWords.length})
+              {t('reveal.missedWords', { count: missedWords.length })}
             </p>
             <div className="grid grid-cols-3 gap-1 text-lg max-h-48 overflow-y-auto">
               {missedWords.map((word, index) => (
@@ -821,7 +820,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
           onClick={startNextRound}
           className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-lg text-xl"
         >
-          {currentRound === (numRounds || players.length) ? 'See Final Results' : 'Next Round'}
+          {currentRound === (numRounds || players.length) ? t('singlePlayer.seeFinalResults') : t('common:buttons.nextRound')}
         </button>
       </div>
     );
@@ -840,7 +839,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
       <div className='max-w-screen-sm bg-gray-800'>
         {/* Header with round and word */}
         <div className="flex justify-between items-center font-semibold text-gray-300 border-b border-gray-600 px-3 py-2">
-          <span className='text-lg'>Round {currentRound}</span>
+          <span className='text-lg'>{t('round', { round: currentRound })}</span>
           <span className='text-2xl font-bold uppercase text-green-500'>{roundData.word}</span>
         </div>
         <OutOfWordsWords
@@ -859,7 +858,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
               onClick={handleEndRound}
               className="w-full py-3 bg-yellow-600 hover:bg-yellow-500 text-white font-semibold rounded-lg text-lg"
             >
-              End Round
+              {t('common:buttons.endRound')}
             </button>
           </div>
         )}
@@ -876,7 +875,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
 
     return (
       <div className='bg-gray-800 mx-4 text-gray-300 text-xl p-6 mt-4 rounded-lg'>
-        <p className="text-2xl font-semibold mb-4">Choose the word for <br></br>round {currentRound}</p>
+        <p className="text-2xl font-semibold mb-4">{t('chooseWord')}<br></br>{t('round', { round: currentRound })}</p>
         <div className="">
           {wordList.map((wordOption, index) => (
             <Button
@@ -889,21 +888,21 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
           ))}
         </div>
         <div className="mt-2 border-t border-gray-600 pt-4">
-          <p className="text-xl mb-2">Or type your own:</p>
+          <p className="text-xl mb-2">{t('orTypeOwn')}</p>
           <div className="flex gap-2">
             <input
               type="text"
               value={customWord}
               onChange={(e) => setCustomWord(e.target.value.toUpperCase())}
               className="flex-1 px-4 py-3 bg-gray-700 rounded text-white uppercase text-xl"
-              placeholder="Enter word..."
+              placeholder={t('enterWord')}
             />
             <Button
               onClick={() => handleWordSelection(customWord)}
               disabled={customWord.length < 6}
               className="text-xl px-4"
             >
-              Use
+              {t('common:buttons.use')}
             </Button>
           </div>
         </div>
@@ -916,7 +915,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     return (
       <div className='m-4 text-gray-300 bg-gray-800 rounded-lg shadow'>
         <p className="text-2xl font-semibold px-4 py-4">
-          Waiting for <span className="text-green-500 font-bold">{players[currentPlayerIndex].name}</span> <br></br>to choose the word
+          {t('waitingForWord', { name: players[currentPlayerIndex].name })}
         </p>
       </div>
     )
@@ -927,7 +926,7 @@ const PlayerWordsRoundPage = ({ gameData, gameRef, players }) => {
     if (!roundData) {
       return (
         <div className="m-4 text-gray-300">
-          <div className="animate-pulse">Loading round...</div>
+          <div className="animate-pulse">{t('loadingRound')}</div>
         </div>
       );
     }

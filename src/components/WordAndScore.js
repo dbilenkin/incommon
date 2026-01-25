@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useSpring, animated } from '@react-spring/web';
+import { useTranslation } from 'react-i18next';
 
 function WordAndScore({ word, points, highlight, allPlayersHaveWord, isRevealed, isCrossedOut, blurUnrevealed = false }) {
+  const { t } = useTranslation('common');
   const [showEmoji, setShowEmoji] = useState(false);
   const wordLength = word?.length || 0;
 
   // Get animation config based on word length (only 5+ get special animations)
   const getAnimationConfig = () => {
     if (wordLength >= 7) {
-      return { scale: 1.8, duration: 1000, emoji: '🔥', text: 'INCREDIBLE!!!', textClass: 'text-3xl text-yellow-400 font-black italic animate-pulse', hasEmoji: true };
+      return { scale: 1.8, duration: 1000, emoji: '', text: t('celebration.incredible'), textClass: 'text-3xl text-yellow-400 font-black italic animate-pulse', hasEmoji: true };
     } else if (wordLength === 6) {
-      return { scale: 1.6, duration: 800, emoji: '⭐', text: 'Amazing!', textClass: 'text-2xl text-yellow-300 font-bold italic', hasEmoji: true };
+      return { scale: 1.6, duration: 800, emoji: '', text: t('celebration.amazing'), textClass: 'text-2xl text-yellow-300 font-bold italic', hasEmoji: true };
     } else if (wordLength === 5) {
-      return { scale: 1.4, duration: 600, emoji: '✨', text: 'nice', textClass: 'text-xl text-blue-300 font-semibold', hasEmoji: true };
+      return { scale: 1.4, duration: 600, emoji: '', text: t('celebration.nice'), textClass: 'text-xl text-blue-300 font-semibold', hasEmoji: true };
     } else {
       return { scale: 1.2, duration: 500, emoji: '', text: '', textClass: '', hasEmoji: false };
     }
@@ -99,7 +101,6 @@ function WordAndScore({ word, points, highlight, allPlayersHaveWord, isRevealed,
           style={emojiSpring}
           className="absolute -top-6 left-1/2 -translate-x-1/2 pointer-events-none whitespace-nowrap flex items-center gap-1"
         >
-          <span className="text-2xl">{animConfig.emoji}</span>
           <span className={animConfig.textClass}>{animConfig.text}</span>
         </animated.div>
       )}

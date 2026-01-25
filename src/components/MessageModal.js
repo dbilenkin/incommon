@@ -1,8 +1,11 @@
 import React from 'react';
 import { useSpring, animated } from '@react-spring/web';
+import { useTranslation } from 'react-i18next';
 import Button from './Button';
 
 const MessageModal = ({ header, message, dismiss, modalAction }) => {
+  const { t } = useTranslation('common');
+
   // Animation for the modal to fly in from the bottom
   const modalAnimation = useSpring({
     from: { transform: 'translateY(100%)', opacity: 0 },
@@ -26,13 +29,13 @@ const MessageModal = ({ header, message, dismiss, modalAction }) => {
             style={{ fontSize: '1rem' }}
             buttonType='secondary'
             onClick={dismiss}>
-            Cancel
+            {t('buttons.cancel')}
           </Button>
           <Button
             style={{ fontSize: '1rem' }}
             className={`w-1/2 mx-4 mb-4 mt-2`}
             onClick={modalAction}>
-            Ok
+            {t('buttons.ok')}
           </Button>
         </div>
       </div>

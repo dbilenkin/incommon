@@ -1,0 +1,37 @@
+{
+  "gameCode": "Game Code",
+  "joinedPlayers": "Joined Players",
+  "startGamePrompt": "{{name}} start the game once everyone joins!",
+  "settings": {
+    "language": "Language",
+    "columnLayout": "Column Layout",
+    "untimedMode": "Untimed Mode",
+    "mode": "Mode",
+    "timed": "Timed",
+    "untimed": "Untimed",
+    "gameTime": "Game Time (Minutes)",
+    "minWordLength": "Minimum Word Length",
+    "numRounds": "Number of Rounds",
+    "deck": "Deck",
+    "gameLength": "Game Length",
+    "wordChoice": "Word Choice",
+    "roundTime": "Round Time (Seconds)"
+  },
+  "deckTypes": {
+    "life": "Life",
+    "celebrities": "Celebrities",
+    "actors": "Actors",
+    "famousPeople": "Famous People",
+    "animals": "Animals",
+    "custom": "Custom*"
+  },
+  "gameLengths": {
+    "short": "Short",
+    "medium": "Medium",
+    "long": "Long"
+  },
+  "wordSelections": {
+    "wordList": "Word List",
+    "custom": "Custom"
+  }
+}

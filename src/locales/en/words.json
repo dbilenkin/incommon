@@ -1,0 +1,46 @@
+{
+  "round": "Round {{round}}",
+  "chooseWord": "Choose the word for",
+  "orTypeOwn": "Or type your own:",
+  "enterWord": "Enter word...",
+  "waitingForWord": "Waiting for {{name}} to choose the word",
+  "tapLetters": "tap letters",
+  "found": "Found",
+  "loading": "Loading word list...",
+  "loadingRound": "Loading round...",
+  "calculatingResults": "Calculating results...",
+  "toasts": {
+    "tooShort": "Too short!",
+    "cantUseOriginal": "Can't use the original word!",
+    "alreadyFound": "Already found!",
+    "notValid": "Not a valid word!"
+  },
+  "timesUp": {
+    "timed": "Times up!",
+    "untimed": "Round ended!",
+    "startReveal": "Now {{name}} can start the reveal."
+  },
+  "reveal": {
+    "words": "{{name}}'s Words",
+    "yourWords": "Your Words ({{count}})",
+    "leaderboard": "Leaderboard",
+    "missedWords": "Missed Words ({{count}})"
+  },
+  "waiting": {
+    "forPlayer": "Waiting for {{name}}"
+  },
+  "singlePlayer": {
+    "roundComplete": "Round {{round}} Complete!",
+    "points": "points",
+    "yourWords": "Your Words ({{count}})",
+    "noWordsFound": "No words found",
+    "seeFinalResults": "See Final Results"
+  },
+  "host": {
+    "word": "Word",
+    "waitingForChooser": "Waiting for {{name}} to choose the word",
+    "gameCode": "Game Code",
+    "words": "words",
+    "pts": "pts"
+  }
+}

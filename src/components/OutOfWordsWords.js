@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import './OutOfWordsWords.css';
 import TimerBar from './TimerBar';
 
 const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, duration, untimed, language = 'en', columnLayout = false }) => {
+  const { t } = useTranslation(['words', 'common']);
   const letters = word.split('');
   const [selectedLetters, setSelectedLetters] = useState([]);
   const [currentWord, setCurrentWord] = useState('');
@@ -81,15 +83,15 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
 
   const handleSubmitClick = () => {
     if (currentWord.length < minWordLength) {
-      showToast("Too short!");
+      showToast(t('toasts.tooShort'));
     } else if (currentWord.toLowerCase() === word.toLowerCase()) {
-      showToast("Can't use the original word!");
+      showToast(t('toasts.cantUseOriginal'));
     } else if (foundWords.includes(currentWord)) {
-      showToast("Already found!");
+      showToast(t('toasts.alreadyFound'));
     } else if (wordList.includes(currentWord.toLowerCase())) {
       setFoundWords([...foundWords, currentWord]);
     } else {
-      showToast("Not a valid word!");
+      showToast(t('toasts.notValid'));
     }
     setSelectedLetters([]);
     setCurrentWord('');
@@ -100,7 +102,7 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
   };
 
   if (loading) {
-    return <div className="text-gray-300">Loading word list...</div>;
+    return <div className="text-gray-300">{t('loading')}</div>;
   }
 
   if (error) {
@@ -128,7 +130,7 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
         {/* Word display with shake */}
         <div className={`flex items-center justify-center h-12 bg-gray-900 rounded-lg mb-2 ${isShaking ? 'animate-shake' : ''}`}>
           <span className="text-3xl font-bold text-white tracking-wider">
-            {currentWord || <span className="text-gray-600">tap letters</span>}
+            {currentWord || <span className="text-gray-600">{t('tapLetters')}</span>}
           </span>
         </div>
 
@@ -138,13 +140,13 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
             onClick={handleBackspaceClick}
             className="flex-1 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg shadow text-lg font-semibold"
           >
-            Delete
+            {t('common:buttons.delete')}
           </button>
           <button
             onClick={handleSubmitClick}
             className="flex-1 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg shadow text-lg font-semibold"
           >
-            Enter
+            {t('common:buttons.enter')}
           </button>
         </div>
       </div>
@@ -193,14 +195,14 @@ const OutOfWordsWords = ({ word, minWordLength, foundWords, setFoundWords, durat
           onClick={handleScramble}
           className="px-6 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded shadow text-base"
         >
-          Scramble
+          {t('common:buttons.scramble')}
         </button>
       </div>
 
       {/* Found words */}
       <div className="found-words-container bg-gray-900 mx-2 mb-2 p-3 rounded-lg">
         <div className="flex items-center justify-between border-b border-gray-700 pb-1 mb-2">
-          <span className="text-lg text-gray-400">Found</span>
+          <span className="text-lg text-gray-400">{t('found')}</span>
           <span className="text-lg font-bold text-green-400">{foundWords.length}</span>
         </div>
         <div className="grid grid-cols-3 gap-1">

@@ -1,0 +1,46 @@
+{
+  "buttons": {
+    "cancel": "Отмена",
+    "ok": "Ок",
+    "join": "Войти",
+    "joinGame": "Войти в игру",
+    "createGame": "Создать игру",
+    "startGame": "Начать игру",
+    "nextRound": "Следующий раунд",
+    "endGame": "Завершить игру",
+    "playAgain": "Играть снова",
+    "next": "Далее",
+    "revealWords": "Показать слова",
+    "endRound": "Завершить раунд",
+    "use": "Ввод",
+    "delete": "Удалить",
+    "enter": "Ввод",
+    "scramble": "Перемешать",
+    "openHostPage": "Открыть страницу ведущего"
+  },
+  "nav": {
+    "round": "Раунд {{round}}"
+  },
+  "toggle": {
+    "soundsOn": "Звук вкл",
+    "soundsOff": "Звук выкл"
+  },
+  "celebration": {
+    "incredible": "НЕВЕРОЯТНО!!!",
+    "amazing": "Потрясающе!",
+    "nice": "круто"
+  },
+  "modal": {
+    "removePlayer": "Удалить игрока",
+    "removePlayerConfirm": "Вы уверены, что хотите удалить {{name}}?",
+    "removeYourself": "себя",
+    "lastOneStanding": "Последний остался",
+    "lastOneStandingMessage": "Ты не можешь удалить себя, глупыш! Ты единственный здесь."
+  },
+  "language": {
+    "en": "Английский",
+    "ru": "Русский"
+  },
+  "yes": "Да",
+  "no": "Нет"
+}

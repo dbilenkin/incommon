@@ -1,0 +1,26 @@
+{
+  "selectGame": "Выберите игру",
+  "yourName": "Ваше имя",
+  "gameId": "Код игры",
+  "recentGames": "Недавние игры",
+  "noGamesWaiting": "Нет ожидающих игр",
+  "refresh": "Обновить",
+  "gameTypes": {
+    "words": "Из слов, слова",
+    "wordsShort": "Слова",
+    "scattergories": "Эрудит",
+    "incommon": "Общее"
+  },
+  "joinModal": {
+    "title": "Войти в игру {{shortId}}",
+    "enterName": "Введите ваше имя"
+  },
+  "createModal": {
+    "title": "Игра создана!",
+    "enterName": "Введите ваше имя"
+  },
+  "alerts": {
+    "enterNameAndId": "Пожалуйста, введите имя и код игры.",
+    "invalidGameId": "Неверный код игры."
+  }
+}

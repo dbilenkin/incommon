@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { collection, deleteDoc, doc, updateDoc, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { useTranslation } from 'react-i18next';
 import { CurrentGameContext } from '../../contexts/CurrentGameContext';
 import Button from '../../components/Button';
 import { db } from '../../utils/Firebase';
@@ -9,6 +10,7 @@ import { playerColors } from '../../constants';
 import MessageModal from '../../components/MessageModal';
 
 const PlayerSetupPage = ({ gameData, gameRef, players }) => {
+  const { t, i18n } = useTranslation(['setup', 'common']);
   const { currentPlayerName, currentPlayerId } = useContext(CurrentGameContext);
   const [selectedDeck, setSelectedDeck] = useState(gameData.deckType || 'life');
   const [selectedGameLength, setSelectedGameLength] = useState(gameData.gameLength || 3);
@@ -19,7 +21,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
   const [untimed, setUntimed] = useState(gameData.untimed || false);
   const [roundTime, setRoundTime] = useState(gameData.roundTime || 90);
   const [scattergoriesNumRounds, setScattergoriesNumRounds] = useState(gameData.scattergoriesNumRounds || 3);
-  const [language, setLanguage] = useState(gameData.language || 'en');
+  const [language, setLanguage] = useState(gameData.language || i18n.language?.substring(0, 2) || 'en');
   const [columnLayout, setColumnLayout] = useState(gameData.columnLayout || false);
   const [showRemovePlayerModal, setShowRemovePlayerModal] = useState(false);
   const [removePlayerName, setRemovePlayerName] = useState('');
@@ -175,13 +177,13 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
   }
 
   const displayRemovePlayerModal = () => {
-    const nameMessage = removePlayerName === currentPlayerName ? "yourself" : removePlayerName;
+    const nameMessage = removePlayerName === currentPlayerName ? t('common:modal.removeYourself') : removePlayerName;
 
     if (players.length === 1) {
       return (
         removePlayerName && <MessageModal
-          header="Last One Standing"
-          message={`You can't remove yourself, silly! You're the last one here.`}
+          header={t('common:modal.lastOneStanding')}
+          message={t('common:modal.lastOneStandingMessage')}
           dismiss={closeRemovePlayerModal}
           modalAction={closeRemovePlayerModal}
         />
@@ -189,8 +191,8 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
     }
     return (
       removePlayerName && <MessageModal
-        header="Remove Player"
-        message={`Are you sure you want to remove ${nameMessage}?`}
+        header={t('common:modal.removePlayer')}
+        message={t('common:modal.removePlayerConfirm', { name: nameMessage })}
         dismiss={closeRemovePlayerModal}
         modalAction={removePlayer}
       />
@@ -204,7 +206,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           {firstPlayer ? (
             <div className="flex items-center pb-4 border-b-2 border-gray-700">
               <label htmlFor="deckType" className="block font-bold w-5/12">
-                Deck
+                {t('settings.deck')}
               </label>
               <select
                 id="deckType"
@@ -212,25 +214,25 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
                 onChange={handleDeckChange}
                 className="block appearance-none w-7/12 bg-gray-700 border border-gray-500 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-gray-600 focus:border-gray-500"
               >
-                <option value="life">Life</option>
-                <option value="celebrities">Celebrities</option>
-                <option value="actors">Actors</option>
-                <option value="famousPeople">Famous People</option>
-                <option value="animals">Animals</option>
-                <option value="custom">Custom*</option>
+                <option value="life">{t('deckTypes.life')}</option>
+                <option value="celebrities">{t('deckTypes.celebrities')}</option>
+                <option value="actors">{t('deckTypes.actors')}</option>
+                <option value="famousPeople">{t('deckTypes.famousPeople')}</option>
+                <option value="animals">{t('deckTypes.animals')}</option>
+                <option value="custom">{t('deckTypes.custom')}</option>
               </select>
             </div>
           ) : (
             <div className=''>
               <label htmlFor="deckType" className="block pb-2 font-normal border-b-2 border-gray-700">
-                Deck: <span className='font-bold'>{displayFormattedDeckType(gameData.deckType)}</span>
+                {t('settings.deck')}: <span className='font-bold'>{displayFormattedDeckType(gameData.deckType)}</span>
               </label>
             </div>
           )}
           {firstPlayer ? (
             <div className="flex items-center py-4 border-b-2 border-gray-700">
               <label htmlFor="deckType" className="block font-bold w-5/12">
-                Game Length
+                {t('settings.gameLength')}
               </label>
               <select
                 id="deckType"
@@ -238,22 +240,22 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
                 onChange={handleGameLengthChange}
                 className="block appearance-none w-7/12 bg-gray-700 border border-gray-500 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-gray-600 focus:border-gray-500"
               >
-                <option key="3" value="3">Short</option>
-                <option key="5" value="5">Medium</option>
-                <option key="10" value="10">Long</option>
+                <option key="3" value="3">{t('gameLengths.short')}</option>
+                <option key="5" value="5">{t('gameLengths.medium')}</option>
+                <option key="10" value="10">{t('gameLengths.long')}</option>
               </select>
             </div>
           ) : (
             <div className=''>
               <label htmlFor="deckType" className="block py-2 font-normal border-b-2 border-gray-700">
-                Game Length: <span className='font-bold'>{displayGameLength(gameData.gameLength)}</span>
+                {t('settings.gameLength')}: <span className='font-bold'>{displayGameLength(gameData.gameLength)}</span>
               </label>
             </div>
           )}
           {firstPlayer ? (
             <div className="flex items-center pt-4">
               <label htmlFor="deckType" className="block font-bold w-5/12">
-                Word Choice
+                {t('settings.wordChoice')}
               </label>
               <select
                 id="deckType"
@@ -261,14 +263,14 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
                 onChange={handleWordSelectionChange}
                 className="block appearance-none w-7/12 bg-gray-700 border border-gray-500 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-gray-600 focus:border-gray-500"
               >
-                <option value="wordList">Word List</option>
-                <option value="custom">Custom</option>
+                <option value="wordList">{t('wordSelections.wordList')}</option>
+                <option value="custom">{t('wordSelections.custom')}</option>
               </select>
             </div>
           ) : (
             <div className=''>
               <label htmlFor="deckType" className="block pt-2 font-normal">
-                Word Choice: <span className='font-bold'>{displayWordSelection(gameData.wordSelection)}</span>
+                {t('settings.wordChoice')}: <span className='font-bold'>{displayWordSelection(gameData.wordSelection)}</span>
               </label>
             </div>
           )}
@@ -281,7 +283,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           {firstPlayer ? (
             <div className="flex items-center pb-4 border-b-2 border-gray-700">
               <label htmlFor="language" className="block font-bold w-5/12">
-                Language
+                {t('settings.language')}
               </label>
               <select
                 id="language"
@@ -296,7 +298,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           ) : (
             <div className=''>
               <label className="block pb-2 font-normal border-b-2 border-gray-700">
-                Language: <span className='font-bold'>{gameData.language === 'ru' ? 'Русский' : 'English'}</span>
+                {t('settings.language')}: <span className='font-bold'>{gameData.language === 'ru' ? 'Русский' : 'English'}</span>
               </label>
             </div>
           )}
@@ -304,7 +306,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           {firstPlayer ? (
             <div className="flex items-center justify-between py-4 border-b-2 border-gray-700">
               <label htmlFor="columnLayout" className="block font-bold">
-                Column Layout
+                {t('settings.columnLayout')}
               </label>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -320,7 +322,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           ) : (
             <div className=''>
               <label className="block py-2 font-normal border-b-2 border-gray-700">
-                Column Layout: <span className='font-bold'>{gameData.columnLayout ? 'Yes' : 'No'}</span>
+                {t('settings.columnLayout')}: <span className='font-bold'>{gameData.columnLayout ? t('common:yes') : t('common:no')}</span>
               </label>
             </div>
           )}
@@ -328,7 +330,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           {firstPlayer ? (
             <div className="flex items-center justify-between py-4 border-b-2 border-gray-700">
               <label htmlFor="untimed" className="block font-bold">
-                Untimed Mode
+                {t('settings.untimedMode')}
               </label>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -344,7 +346,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           ) : (
             <div className=''>
               <label className="block py-2 font-normal border-b-2 border-gray-700">
-                Untimed Mode: <span className='font-bold'>{gameData.untimed ? 'Yes' : 'No'}</span>
+                {t('settings.untimedMode')}: <span className='font-bold'>{gameData.untimed ? t('common:yes') : t('common:no')}</span>
               </label>
             </div>
           )}
@@ -352,7 +354,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           {!untimed && (firstPlayer ? (
             <div className="flex items-center py-4 border-b-2 border-gray-700">
               <label htmlFor="gameTime" className="block font-bold w-5/12">
-                Game Time (Minutes)
+                {t('settings.gameTime')}
               </label>
               <select
                 id="gameTime"
@@ -369,14 +371,14 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           ) : (
             <div className=''>
               <label htmlFor="gameTime" className="block py-2 font-normal border-b-2 border-gray-700">
-                Game Time (Minutes): <span className='font-bold'>{gameData.gameTime}</span>
+                {t('settings.gameTime')}: <span className='font-bold'>{gameData.gameTime}</span>
               </label>
             </div>
           ))}
           {firstPlayer ? (
             <div className="flex items-center py-4 border-b-2 border-gray-700">
               <label htmlFor="minWordLength" className="block font-bold w-5/12">
-                Minimum Word Length
+                {t('settings.minWordLength')}
               </label>
               <select
                 id="minWordLength"
@@ -392,14 +394,14 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           ) : (
             <div className=''>
               <label htmlFor="minWordLength" className="block py-2 font-normal border-b-2 border-gray-700">
-                Minimum Word Length: <span className='font-bold'>{gameData.minWordLength}</span>
+                {t('settings.minWordLength')}: <span className='font-bold'>{gameData.minWordLength}</span>
               </label>
             </div>
           )}
           {firstPlayer ? (
             <div className="flex items-center pt-4">
               <label htmlFor="numRounds" className="block font-bold w-5/12">
-                Number of Rounds
+                {t('settings.numRounds')}
               </label>
               <select
                 id="numRounds"
@@ -415,7 +417,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           ) : (
             <div className=''>
               <label htmlFor="numRounds" className="block pt-2 font-normal">
-                Number of Rounds: <span className='font-bold'>{gameData.numRounds || players.length}</span>
+                {t('settings.numRounds')}: <span className='font-bold'>{gameData.numRounds || players.length}</span>
               </label>
             </div>
           )}
@@ -427,7 +429,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           {firstPlayer ? (
             <div className="flex items-center pb-4 border-b-2 border-gray-700">
               <label htmlFor="roundTime" className="block font-bold w-5/12">
-                Round Time (Seconds)
+                {t('settings.roundTime')}
               </label>
               <select
                 id="roundTime"
@@ -443,14 +445,14 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           ) : (
             <div className=''>
               <label className="block pb-2 font-normal border-b-2 border-gray-700">
-                Round Time (Seconds): <span className='font-bold'>{gameData.roundTime || 90}</span>
+                {t('settings.roundTime')}: <span className='font-bold'>{gameData.roundTime || 90}</span>
               </label>
             </div>
           )}
           {firstPlayer ? (
             <div className="flex items-center pt-4">
               <label htmlFor="scattergoriesNumRounds" className="block font-bold w-5/12">
-                Number of Rounds
+                {t('settings.numRounds')}
               </label>
               <select
                 id="scattergoriesNumRounds"
@@ -466,7 +468,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
           ) : (
             <div className=''>
               <label className="block pt-2 font-normal">
-                Number of Rounds: <span className='font-bold'>{gameData.numRounds || 3}</span>
+                {t('settings.numRounds')}: <span className='font-bold'>{gameData.numRounds || 3}</span>
               </label>
             </div>
           )}
@@ -478,10 +480,10 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
   return (
     <div className="max-w-screen-sm mx-auto p-4 text-lg text-gray-300">
       {displayRemovePlayerModal()}
-      <h2 className="bg-gray-800 text-gray-300 text-xl font-bold mb-4 p-4 text-gray-300 rounded-lg">Game Code: {shortId}</h2>
+      <h2 className="bg-gray-800 text-gray-300 text-xl font-bold mb-4 p-4 text-gray-300 rounded-lg">{t('gameCode')}: {shortId}</h2>
       <div className='mt-4 p-4 bg-gray-800 rounded-lg'>
         <div className="pb-2 border-b-2 border-gray-700 text-left text-lg">
-          Joined Players
+          {t('joinedPlayers')}
         </div>
         <div className="flex flex-wrap pt-2">
           {players.map((p, i) => (
@@ -513,7 +515,7 @@ const PlayerSetupPage = ({ gameData, gameRef, players }) => {
         onClick={handleStartGame}
         className={`mt-4 w-full text-xl p-4 ${players.length >= 3 ? 'bg-green-600 text-white' : 'bg-gray-500 text-gray-100'}`}
         disabled={players.length < 1}>
-        Start Game
+        {t('common:buttons.startGame')}
       </Button>}
     </div>
   );

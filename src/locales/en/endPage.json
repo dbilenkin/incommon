@@ -1,0 +1,67 @@
+{
+  "winner": {
+    "title": "{{name}} Wins!",
+    "points": "{{count}} points"
+  },
+  "singlePlayer": {
+    "title": "Solo Practice Complete!",
+    "finalScore": "Final Score: {{score}} points"
+  },
+  "standings": {
+    "title": "Final Standings",
+    "words": "words"
+  },
+  "awards": {
+    "title": "Awards",
+    "wordWizard": "Word Wizard",
+    "bigWordEnergy": "Big Word Energy",
+    "hotStreak": "Hot Streak",
+    "uniqueMind": "Unique Mind",
+    "basic": "Basic",
+    "vowelMovement": "Vowel Movement",
+    "consonantQueen": "Consonant Queen",
+    "alphabetSoup": "Alphabet Soup",
+    "photoFinish": "Photo Finish",
+    "hiveMind": "Hive Mind",
+    "loneWolf": "Lone Wolf",
+    "steadyEddie": "Steady Eddie",
+    "comebackKid": "Comeback Kid",
+    "sleeperHit": "Sleeper Hit",
+    "details": {
+      "words": "{{count}} words",
+      "unique": "{{count}} unique",
+      "obvious": "{{count}} obvious",
+      "letters": "{{count}} letters",
+      "ptsBehind": "{{count}} pts behind",
+      "withPlayer": "{{count}} with {{name}}",
+      "avgOverlap": "{{value}} avg overlap",
+      "ptsPerRound": "~{{value}} pts/round",
+      "swing": "+{{value}} swing",
+      "inOneRound": "{{count}} in one round"
+    }
+  },
+  "stats": {
+    "yourStats": "Your Stats",
+    "summary": "Summary",
+    "place": "Place",
+    "points": "Points",
+    "wordsFound": "Words Found",
+    "longestWord": "Longest Word",
+    "yourUniqueFinds": "Your Unique Finds ({{count}})",
+    "more": "+{{count}} more"
+  },
+  "gameStats": {
+    "title": "Game Stats",
+    "rounds": "Rounds",
+    "totalWords": "Total Words",
+    "players": "Players",
+    "longestWordsOfGame": "Longest Words of the Game"
+  },
+  "ordinal": {
+    "1": "st",
+    "2": "nd",
+    "3": "rd",
+    "other": "th"
+  },
+  "waitingForNewGame": "Waiting for {{name}} to start a new game..."
+}

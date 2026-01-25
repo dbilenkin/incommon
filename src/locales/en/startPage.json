@@ -1,0 +1,26 @@
+{
+  "selectGame": "Select Game",
+  "yourName": "Your Name",
+  "gameId": "Game ID",
+  "recentGames": "Recent Games",
+  "noGamesWaiting": "No games waiting",
+  "refresh": "Refresh",
+  "gameTypes": {
+    "words": "Out of Words, Words",
+    "wordsShort": "Words",
+    "scattergories": "Scattergories",
+    "incommon": "Incommon"
+  },
+  "joinModal": {
+    "title": "Join game {{shortId}}",
+    "enterName": "Enter your name"
+  },
+  "createModal": {
+    "title": "Game Created!",
+    "enterName": "Enter your name"
+  },
+  "alerts": {
+    "enterNameAndId": "Please enter your name and game ID.",
+    "invalidGameId": "Invalid game ID."
+  }
+}

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { collection, query, getDocs, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
+import { useTranslation } from 'react-i18next';
 import { CurrentGameContext } from '../../contexts/CurrentGameContext';
 import Spinner from '../../components/Spinner';
 
 function PlayerWordsEndPage({ gameData, gameRef, players }) {
+  const { t } = useTranslation(['endPage', 'common']);
   const [allRounds, setAllRounds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
@@ -187,10 +189,10 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
     if (playerStats[sortedByWords[0]].totalWords > 0) {
       allAwards.push({
         id: 'wordWizard',
-        name: 'Word Wizard',
-        emoji: '📚',
+        name: t('awards.wordWizard'),
+        emoji: '',
         winner: sortedByWords[0],
-        detail: `${playerStats[sortedByWords[0]].totalWords} words`
+        detail: t('awards.details.words', { count: playerStats[sortedByWords[0]].totalWords })
       });
     }
 
@@ -201,8 +203,8 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
     if (playerStats[sortedByLongest[0]].longestWord.length > 0) {
       allAwards.push({
         id: 'bigWordEnergy',
-        name: 'Big Word Energy',
-        emoji: '🧠',
+        name: t('awards.bigWordEnergy'),
+        emoji: '',
         winner: sortedByLongest[0],
         detail: playerStats[sortedByLongest[0]].longestWord
       });
@@ -215,10 +217,10 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
     if (playerStats[sortedByBestRound[0]].bestRoundWords > 0) {
       allAwards.push({
         id: 'hotStreak',
-        name: 'Hot Streak',
-        emoji: '🔥',
+        name: t('awards.hotStreak'),
+        emoji: '',
         winner: sortedByBestRound[0],
-        detail: `${playerStats[sortedByBestRound[0]].bestRoundWords} in one round`
+        detail: t('awards.details.inOneRound', { count: playerStats[sortedByBestRound[0]].bestRoundWords })
       });
     }
 
@@ -229,10 +231,10 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
     if (playerStats[sortedByUnique[0]].uniqueWords.length > 0) {
       allAwards.push({
         id: 'uniqueMind',
-        name: 'Unique Mind',
-        emoji: '💎',
+        name: t('awards.uniqueMind'),
+        emoji: '',
         winner: sortedByUnique[0],
-        detail: `${playerStats[sortedByUnique[0]].uniqueWords.length} unique`
+        detail: t('awards.details.unique', { count: playerStats[sortedByUnique[0]].uniqueWords.length })
       });
     }
 
@@ -243,10 +245,10 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
     if (playerStats[sortedByCommon[0]].commonWords.length > 0) {
       allAwards.push({
         id: 'basic',
-        name: 'Basic',
-        emoji: '🎯',
+        name: t('awards.basic'),
+        emoji: '',
         winner: sortedByCommon[0],
-        detail: `${playerStats[sortedByCommon[0]].commonWords.length} obvious`
+        detail: t('awards.details.obvious', { count: playerStats[sortedByCommon[0]].commonWords.length })
       });
     }
 
@@ -265,8 +267,8 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
     if (bestVowelWord && bestVowelPct > 0.4) { // At least 40% vowels to be interesting
       allAwards.push({
         id: 'vowelMovement',
-        name: 'Vowel Movement',
-        emoji: '🅰️',
+        name: t('awards.vowelMovement'),
+        emoji: '',
         winner: bestVowelPlayer,
         detail: bestVowelWord
       });
@@ -287,8 +289,8 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
     if (bestConsonantWord && bestConsonantStreak >= 3) { // At least 3 consonants in a row
       allAwards.push({
         id: 'consonantQueen',
-        name: 'Consonant Queen',
-        emoji: '🦴',
+        name: t('awards.consonantQueen'),
+        emoji: '',
         winner: bestConsonantPlayer,
         detail: bestConsonantWord
       });
@@ -303,10 +305,10 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
     if (letterCounts[sortedByLetters[0]] > 0) {
       allAwards.push({
         id: 'alphabetSoup',
-        name: 'Alphabet Soup',
-        emoji: '🔤',
+        name: t('awards.alphabetSoup'),
+        emoji: '',
         winner: sortedByLetters[0],
-        detail: `${letterCounts[sortedByLetters[0]]} letters`
+        detail: t('awards.details.letters', { count: letterCounts[sortedByLetters[0]] })
       });
     }
 
@@ -328,10 +330,10 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
         ? closestPair[0] : closestPair[1];
       allAwards.push({
         id: 'photoFinish',
-        name: 'Photo Finish',
-        emoji: '📸',
+        name: t('awards.photoFinish'),
+        emoji: '',
         winner: lowerScorer,
-        detail: `${closestDiff} pts behind`
+        detail: t('awards.details.ptsBehind', { count: closestDiff })
       });
     }
 
@@ -355,10 +357,10 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
     if (hiveMindPlayer && bestOverlap >= 3) { // At least 3 words in common
       allAwards.push({
         id: 'hiveMind',
-        name: 'Hive Mind',
-        emoji: '🐝',
+        name: t('awards.hiveMind'),
+        emoji: '',
         winner: hiveMindPlayer,
-        detail: `${bestOverlap} with ${hiveMindPartner}`
+        detail: t('awards.details.withPlayer', { count: bestOverlap, name: hiveMindPartner })
       });
     }
 
@@ -380,10 +382,10 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
     if (playerStats[sortedByLoneWolf[0]].totalWords > 0 && playerNames.length > 2) {
       allAwards.push({
         id: 'loneWolf',
-        name: 'Lone Wolf',
-        emoji: '🐺',
+        name: t('awards.loneWolf'),
+        emoji: '',
         winner: sortedByLoneWolf[0],
-        detail: `${avgOverlaps[sortedByLoneWolf[0]].toFixed(1)} avg overlap`
+        detail: t('awards.details.avgOverlap', { value: avgOverlaps[sortedByLoneWolf[0]].toFixed(1) })
       });
     }
 
@@ -401,10 +403,10 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
                         playerStats[sortedByConsistency[0]].roundScores.length;
         allAwards.push({
           id: 'steadyEddie',
-          name: 'Steady Eddie',
-          emoji: '📊',
+          name: t('awards.steadyEddie'),
+          emoji: '',
           winner: sortedByConsistency[0],
-          detail: `~${Math.round(avgScore)} pts/round`
+          detail: t('awards.details.ptsPerRound', { value: Math.round(avgScore) })
         });
       }
     }
@@ -424,10 +426,10 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
       if (improvements[sortedByComeback[0]] > 0) {
         allAwards.push({
           id: 'comebackKid',
-          name: 'Comeback Kid',
-          emoji: '🐢',
+          name: t('awards.comebackKid'),
+          emoji: '',
           winner: sortedByComeback[0],
-          detail: `+${improvements[sortedByComeback[0]]} swing`
+          detail: t('awards.details.swing', { value: improvements[sortedByComeback[0]] })
         });
       }
     }
@@ -446,8 +448,8 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
       if (totalImprovement > 0 && round1Scores[lowestRound1] < Math.max(...Object.values(round1Scores))) {
         allAwards.push({
           id: 'sleeperHit',
-          name: 'Sleeper Hit',
-          emoji: '😴',
+          name: t('awards.sleeperHit'),
+          emoji: '',
           winner: lowestRound1,
           detail: `${round1Scores[lowestRound1]}→${playerStats[lowestRound1].totalScore}`
         });
@@ -518,7 +520,7 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
       totalWordsFound: allWordsInGame.length,
       totalRounds: allRounds.length
     });
-  }, [allRounds, players]);
+  }, [allRounds, players, t]);
 
   const handlePlayAgain = async () => {
     // Reset game state to setup, keeping the same players
@@ -556,10 +558,17 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
   }
 
   const getMedal = (index) => {
-    if (index === 0) return '🥇';
-    if (index === 1) return '🥈';
-    if (index === 2) return '🥉';
+    if (index === 0) return '';
+    if (index === 1) return '';
+    if (index === 2) return '';
     return '';
+  };
+
+  const getOrdinal = (n) => {
+    if (n === 1) return t('ordinal.1');
+    if (n === 2) return t('ordinal.2');
+    if (n === 3) return t('ordinal.3');
+    return t('ordinal.other');
   };
 
   const currentPlayerStats = stats.playerStats[currentPlayerName];
@@ -570,22 +579,22 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
       {/* Winner Celebration / Solo Results */}
       {isSinglePlayer ? (
         <div className="bg-gradient-to-b from-blue-600 to-blue-800 rounded-lg p-4 mb-2 text-center">
-          <div className="text-4xl mb-2">🎯</div>
+          <div className="text-4xl mb-2"></div>
           <h2 className="text-2xl font-bold text-white">
-            Solo Practice Complete!
+            {t('singlePlayer.title')}
           </h2>
           <p className="text-blue-200 text-lg">
-            Final Score: {stats.leaderboard[0].totalScore} points
+            {t('singlePlayer.finalScore', { score: stats.leaderboard[0].totalScore })}
           </p>
         </div>
       ) : (
         <div className="bg-gradient-to-b from-yellow-600 to-yellow-800 rounded-lg p-4 mb-2 text-center">
-          <div className="text-4xl mb-2">🏆</div>
+          <div className="text-4xl mb-2"></div>
           <h2 className="text-2xl font-bold text-white">
-            {stats.leaderboard[0].name} Wins!
+            {t('winner.title', { name: stats.leaderboard[0].name })}
           </h2>
           <p className="text-yellow-200 text-lg">
-            {stats.leaderboard[0].totalScore} points
+            {t('winner.points', { count: stats.leaderboard[0].totalScore })}
           </p>
         </div>
       )}
@@ -594,7 +603,7 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
       {!isSinglePlayer && (
         <div className="bg-gray-800 rounded-lg p-4 mb-2">
           <h3 className="text-xl font-bold text-gray-200 mb-3 border-b border-gray-600 pb-2">
-            Final Standings
+            {t('standings.title')}
           </h3>
           <div className="flex flex-col gap-2">
             {stats.leaderboard.map((player, index) => {
@@ -612,7 +621,7 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
                     </span>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="text-gray-400 text-sm">{player.totalWords} words</span>
+                    <span className="text-gray-400 text-sm">{player.totalWords} {t('standings.words')}</span>
                     <span className="text-xl font-bold text-green-400">{player.totalScore}</span>
                   </div>
                 </div>
@@ -626,7 +635,7 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
       {!isSinglePlayer && stats.selectedAwards.length > 0 && (
         <div className="bg-gray-800 rounded-lg p-4 mb-2">
           <h3 className="text-xl font-bold text-gray-200 mb-3 border-b border-gray-600 pb-2">
-            Awards
+            {t('awards.title')}
           </h3>
           <div className="grid grid-cols-2 gap-2">
             {stats.selectedAwards.map(award => (
@@ -645,31 +654,31 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
       {currentPlayerStats && (
         <div className="bg-gray-800 rounded-lg p-4 mb-2">
           <h3 className="text-xl font-bold text-gray-200 mb-3 border-b border-gray-600 pb-2">
-            {isSinglePlayer ? 'Summary' : 'Your Stats'}
+            {isSinglePlayer ? t('stats.summary') : t('stats.yourStats')}
           </h3>
           <div className="grid grid-cols-2 gap-3 text-center">
             {!isSinglePlayer && (
               <div>
-                <div className="text-3xl font-bold text-green-400">{currentPlayerRank}{currentPlayerRank === 1 ? 'st' : currentPlayerRank === 2 ? 'nd' : currentPlayerRank === 3 ? 'rd' : 'th'}</div>
-                <div className="text-sm text-gray-400">Place</div>
+                <div className="text-3xl font-bold text-green-400">{currentPlayerRank}{getOrdinal(currentPlayerRank)}</div>
+                <div className="text-sm text-gray-400">{t('stats.place')}</div>
               </div>
             )}
             <div>
               <div className="text-3xl font-bold text-green-400">{currentPlayerStats.totalScore}</div>
-              <div className="text-sm text-gray-400">Points</div>
+              <div className="text-sm text-gray-400">{t('stats.points')}</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-blue-400">{currentPlayerStats.totalWords}</div>
-              <div className="text-sm text-gray-400">Words Found</div>
+              <div className="text-sm text-gray-400">{t('stats.wordsFound')}</div>
             </div>
             <div>
               <div className="text-xl font-bold text-yellow-400 uppercase">{currentPlayerStats.longestWord || '-'}</div>
-              <div className="text-sm text-gray-400">Longest Word</div>
+              <div className="text-sm text-gray-400">{t('stats.longestWord')}</div>
             </div>
           </div>
           {!isSinglePlayer && currentPlayerStats.uniqueWords.length > 0 && (
             <div className="mt-3 pt-3 border-t border-gray-700">
-              <div className="text-sm text-gray-400 mb-2">Your Unique Finds ({currentPlayerStats.uniqueWords.length})</div>
+              <div className="text-sm text-gray-400 mb-2">{t('stats.yourUniqueFinds', { count: currentPlayerStats.uniqueWords.length })}</div>
               <div className="flex flex-wrap gap-1">
                 {currentPlayerStats.uniqueWords.slice(0, 10).map(word => (
                   <span key={word} className="bg-purple-900 text-purple-200 px-2 py-1 rounded text-sm">
@@ -677,7 +686,7 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
                   </span>
                 ))}
                 {currentPlayerStats.uniqueWords.length > 10 && (
-                  <span className="text-gray-500 text-sm">+{currentPlayerStats.uniqueWords.length - 10} more</span>
+                  <span className="text-gray-500 text-sm">{t('stats.more', { count: currentPlayerStats.uniqueWords.length - 10 })}</span>
                 )}
               </div>
             </div>
@@ -688,21 +697,21 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
       {/* Game Stats */}
       <div className="bg-gray-800 rounded-lg p-4 mb-2">
         <h3 className="text-xl font-bold text-gray-200 mb-3 border-b border-gray-600 pb-2">
-          Game Stats
+          {t('gameStats.title')}
         </h3>
         <div className="flex justify-around text-center">
           <div>
             <div className="text-2xl font-bold text-gray-200">{stats.totalRounds}</div>
-            <div className="text-sm text-gray-400">Rounds</div>
+            <div className="text-sm text-gray-400">{t('gameStats.rounds')}</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-gray-200">{stats.totalWordsFound}</div>
-            <div className="text-sm text-gray-400">Total Words</div>
+            <div className="text-sm text-gray-400">{t('gameStats.totalWords')}</div>
           </div>
           {!isSinglePlayer && (
             <div>
               <div className="text-2xl font-bold text-gray-200">{players.length}</div>
-              <div className="text-sm text-gray-400">Players</div>
+              <div className="text-sm text-gray-400">{t('gameStats.players')}</div>
             </div>
           )}
         </div>
@@ -710,7 +719,7 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
         {/* Longest Words */}
         {stats.longestWords.length > 0 && (
           <div className="mt-3 pt-3 border-t border-gray-700">
-            <div className="text-sm text-gray-400 mb-2">Longest Words of the Game</div>
+            <div className="text-sm text-gray-400 mb-2">{t('gameStats.longestWordsOfGame')}</div>
             <div className="flex flex-wrap gap-2">
               {stats.longestWords.map((item, idx) => (
                 <div key={idx} className="bg-gray-900 px-2 py-1 rounded">
@@ -729,11 +738,11 @@ function PlayerWordsEndPage({ gameData, gameRef, players }) {
           onClick={handlePlayAgain}
           className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg text-xl mb-4"
         >
-          Play Again
+          {t('common:buttons.playAgain')}
         </button>
       ) : (
         <p className="text-center text-gray-400 py-4 mb-4">
-          Waiting for <span className="text-green-500 font-bold">{players[0]?.name}</span> to start a new game...
+          {t('waitingForNewGame', { name: players[0]?.name })}
         </p>
       )}
     </div>
